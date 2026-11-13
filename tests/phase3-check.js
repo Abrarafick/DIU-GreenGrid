@@ -171,7 +171,7 @@ async function runPhase3Checks() {
 
     // 5. Building-wise Analytics & Ranking
     const buildings = await prisma.building.findMany({ where: { isActive: true } });
-    assert(buildings.length === 5, "5 Campus facilities registered for building-wise analytics");
+    assert(buildings.length === 9, "9 Campus facilities registered for building-wise analytics (AB-1..4, YKSG-1..2, RASG-1..2, FabLab)");
 
     const buildingSums = buildings.map((b) => {
       const bMetrics = metrics.filter((m) => m.buildingId === b.id);

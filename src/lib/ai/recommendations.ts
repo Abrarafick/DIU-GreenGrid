@@ -64,8 +64,8 @@ export function generateAiRecommendations(
   const worstNight = nightAnomalies[0] || {
     observedValue: 340,
     expectedBaseline: 180,
-    buildingCode: "AB-01",
-    buildingName: "Academic Building 01",
+    buildingCode: "AB-1",
+    buildingName: "Academic Building 1",
     severity: "HIGH" as const,
     supportingEvidence: "Overnight baseline draw of 340 kWh/interval observed between 22:00 and 06:00.",
   };
@@ -141,8 +141,8 @@ export function generateAiRecommendations(
     (a) => a.anomalyType === "UNEXPECTED_CONSUMPTION_SPIKE"
   );
   const spike = spikeAnomalies[0] || {
-    buildingCode: "AB-02",
-    buildingName: "Academic Building 02",
+    buildingCode: "AB-2",
+    buildingName: "Academic Building 2",
     observedValue: 460,
     expectedBaseline: 340,
     deviationPercent: 35,
@@ -179,18 +179,18 @@ export function generateAiRecommendations(
   });
 
   // 4. Recommendation: Academic Building EUI & AC Setpoint Audit
-  const ab02 = buildings.find((b) => b.code === "AB-02") || buildings[0];
-  const ab02DailyBaseline = ab02?.baselineDailyKwh || 3100;
+  const ab2 = buildings.find((b) => b.code === "AB-2" || b.code === "AB-02") || buildings[0];
+  const ab2DailyBaseline = ab2?.baselineDailyKwh || 3100;
   // Formula: Cooling fraction (~60%) * 1°C thermostat adjustment (6% thermodynamic reduction per ASHRAE 55) * 7 days
-  const calculatedAcSavings = Math.round(ab02DailyBaseline * 0.60 * 0.06 * (24.0 - 22.0) * 0.5 * 7);
+  const calculatedAcSavings = Math.round(ab2DailyBaseline * 0.60 * 0.06 * (24.0 - 22.0) * 0.5 * 7);
 
   recommendations.push({
     id: "rec-ac-setpoint",
     title: "Standardize Air-Conditioning Setpoint to 25°C Across Computer Labs",
     category: reliability.category,
     priority: "MEDIUM",
-    targetBuildingCode: ab02?.code || "AB-02",
-    targetBuildingName: ab02?.name || "Academic Building 02",
+    targetBuildingCode: ab2?.code || "AB-2",
+    targetBuildingName: ab2?.name || "Academic Building 2",
     detectedIssue:
       "Continuous sub-cooling below 22°C observed in software engineering and hardware labs during standard daytime sessions.",
     supportingEvidence:
@@ -214,8 +214,8 @@ export function generateAiRecommendations(
   const weekendAnom = anomalies.find(
     (a) => a.anomalyType === "WEEKEND_OFFPEAK_ELEVATION"
   ) || {
-    buildingCode: "AB-01",
-    buildingName: "Academic Building 01",
+    buildingCode: "AB-1",
+    buildingName: "Academic Building 1",
     observedValue: 850,
     expectedBaseline: 620,
     deviationPercent: 37,
@@ -246,6 +246,35 @@ export function generateAiRecommendations(
     assignedUnit: "Campus Facility Custodial & Security Team",
     estimatedWeeklyKwhSavings: Math.max(180, calculatedWeekendSavings),
     expectedOutcomeNotice: `Estimated outcome: ~${Math.max(180, calculatedWeekendSavings).toLocaleString()} kWh/week technical phantom load reduction.`,
+    status: "OPEN",
+    createdAt: new Date().toISOString(),
+  });
+
+  // 6. Recommendation: FabLab Prototyping Load Shifting & Laser Fume Extractor Timer Control
+  const fablab = buildings.find((b) => b.code === "FabLab");
+  recommendations.push({
+    id: "rec-fablab-solar-shift",
+    title: "FabLab Digital Prototyping & Laser Cutter Solar Window Synchronization",
+    category: reliability.category,
+    priority: "HIGH",
+    targetBuildingCode: "FabLab",
+    targetBuildingName: fablab?.name || "Fabrication Laboratory (FabLab DIU)",
+    detectedIssue:
+      "Simultaneous operation of industrial CO2 laser cutters, CNC milling machines, and 18x 3D printers during evening peak grid hours.",
+    supportingEvidence:
+      "FabLab sub-meter indicates high daytime prototyping peaks (110 kW) and continuous idling exhaust fans during non-machining periods.",
+    technicalReasoning:
+      "Aligning long-run 3D print batches and high-ampere subtractive machining with the peak 10:30-14:00 rooftop solar generation curve maximizes clean on-site renewable self-consumption.",
+    calculationMethodology:
+      "Formula: P_shiftable_prototyping (35 kW) × 3 hours shifted daily × 5 academic weekdays = 525 kWh/week clean solar offset.",
+    documentedAssumptions:
+      "Assumes maker lab job queue software can schedule multi-hour print runs during daytime solar peak hours.",
+    suggestedAction:
+      "Queue heavy 3D printing jobs between 10:30 and 14:00 BST and install smart current-sensing power cutoffs on laser cutter ventilation blowers.",
+    assignedUnit: "FabLab DIU Operations & Electrical Maintenance",
+    estimatedWeeklyKwhSavings: 525,
+    expectedOutcomeNotice:
+      "Estimated outcome: ~525 kWh/week of utility grid demand displaced into clean solar generation.",
     status: "OPEN",
     createdAt: new Date().toISOString(),
   });

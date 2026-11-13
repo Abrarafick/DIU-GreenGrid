@@ -41,21 +41,45 @@ export function VolteraOverviewDashboard({
   user,
 }: VolteraOverviewDashboardProps) {
   const [selectedSite, setSelectedSite] = useState<string>("All sites");
+  const [showSiteDropdown, setShowSiteDropdown] = useState<boolean>(false);
   const [timeRange, setTimeRange] = useState<string>("Last 30 days");
   const [activeAlertFilter, setActiveAlertFilter] = useState<string>("All alerts");
   const [severityFilter, setSeverityFilter] = useState<string>("All severity");
   const [highlightedRow, setHighlightedRow] = useState<number>(0);
+
+  const siteOptions = [
+    "All sites",
+    "AB-1 (Engineering & Tech)",
+    "AB-2 (Computing & IT Labs)",
+    "AB-3 (Business & Entrepreneurship)",
+    "AB-4 (Science & Allied Health)",
+    "YKSG-1 (Scholars Garden Male 1)",
+    "YKSG-2 (Scholars Garden Male 2)",
+    "RASG-1 (Rowshan Ara Female 1)",
+    "RASG-2 (Rowshan Ara Female 2)",
+    "FabLab (Maker & Prototyping Center)",
+  ];
+
   const [recommendations, setRecommendations] = useState([
     {
       id: "rec-1",
-      tag: "AI recommendation",
-      text: "AC chillers at Academic Building 02 show 23% higher consumption after 7pm. Adjusting setback schedule could save approximately 1,400 kWh/week.",
+      tag: "FabLab AI Recommendation",
+      badge: "FabLab",
+      text: "FabLab: 18x 3D printers and CNC spindle operate during evening peak. Scheduling multi-hour 3D print batches and laser cutting between 10am-2pm will absorb 950 kWh/week of excess rooftop solar energy.",
       status: "OPEN",
     },
     {
       id: "rec-2",
+      tag: "AI recommendation",
+      badge: "AB-2",
+      text: "AC chillers and lab workstation clusters at Academic Building 2 show 23% higher consumption after 7pm. Adjusting setback schedule could save approximately 1,400 kWh/week.",
+      status: "OPEN",
+    },
+    {
+      id: "rec-3",
       tag: "Schedule Optimization",
-      text: "Shift water reservoir pump cycle to peak solar generation hours (10am-1pm). Estimated savings: 850 kWh/week grid import avoided.",
+      badge: "YKSG-1",
+      text: "Shift dual water reservoir pump cycle at Yunus Khan Scholars Garden 1 to peak solar generation hours (10am-1pm). Estimated savings: 850 kWh/week grid import avoided.",
       status: "OPEN",
     },
   ]);
@@ -72,22 +96,23 @@ export function VolteraOverviewDashboard({
 
   // 7-day consumption data for the cylindrical stacked chart
   const weeklyConsumptionData = [
-    { day: "Mon", ab01: 420, ab02: 310, yksg: 240, lib: 190, isAnomaly: false },
-    { day: "Tue", ab01: 450, ab02: 330, yksg: 250, lib: 210, isAnomaly: false },
-    { day: "Wed", ab01: 736, ab02: 387, yksg: 253, lib: 232, isAnomaly: true }, // Anomaly spike
-    { day: "Thur", ab01: 460, ab02: 340, yksg: 245, lib: 200, isAnomaly: false },
-    { day: "Fri", ab01: 390, ab02: 280, yksg: 210, lib: 180, isAnomaly: false },
-    { day: "Sat", ab01: 280, ab02: 190, yksg: 190, lib: 140, isAnomaly: false },
-    { day: "Sun", ab01: 270, ab02: 180, yksg: 185, lib: 135, isAnomaly: false },
+    { day: "Mon", ab1: 420, ab2: 310, fablab: 280, dorms: 390, isAnomaly: false },
+    { day: "Tue", ab1: 450, ab2: 330, fablab: 290, dorms: 410, isAnomaly: false },
+    { day: "Wed", ab1: 736, ab2: 387, fablab: 342, dorms: 471, isAnomaly: true }, // Anomaly spike
+    { day: "Thur", ab1: 460, ab2: 340, fablab: 300, dorms: 405, isAnomaly: false },
+    { day: "Fri", ab1: 390, ab2: 280, fablab: 240, dorms: 360, isAnomaly: false },
+    { day: "Sat", ab1: 280, ab2: 190, fablab: 220, dorms: 480, isAnomaly: false },
+    { day: "Sun", ab1: 270, ab2: 180, fablab: 210, dorms: 470, isAnomaly: false },
   ];
 
-  // Alerts data matching the reference image layout
+  // Alerts data matching official DIU campus facilities (AB-1..4, YKSG-1..2, RASG-1..2, FabLab)
   const alertsData = [
     {
       id: 0,
-      title: "Machine 48 / Server Rack B spikes after 7pm",
+      title: "FabLab: 18x 3D Printer Farm high thermal bed baseload after 8pm",
       time: "14:23",
-      site: "Academic Building 02",
+      site: "FabLab (Maker Lab)",
+      facilityCode: "FabLab",
       severity: "High",
       severityColor: "bg-rose-500/20 text-rose-300 border-rose-500/30",
       status: "Open",
@@ -95,29 +120,54 @@ export function VolteraOverviewDashboard({
     },
     {
       id: 1,
-      title: "HVAC running during off-hours (2nd Floor)",
+      title: "Machine 48 / Server Cluster B spikes after 7pm",
       time: "13:45",
-      site: "Library & Knowledge Center",
+      site: "Academic Building 2 (AB-2)",
+      facilityCode: "AB-2",
+      severity: "High",
+      severityColor: "bg-rose-500/20 text-rose-300 border-rose-500/30",
+      status: "Open",
+      statusColor: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+    },
+    {
+      id: 2,
+      title: "HVAC running during off-hours (3rd Floor Lecture Hall)",
+      time: "12:50",
+      site: "Academic Building 1 (AB-1)",
+      facilityCode: "AB-1",
       severity: "Medium",
       severityColor: "bg-amber-500/20 text-amber-300 border-amber-500/30",
       status: "Open",
       statusColor: "bg-blue-500/10 text-blue-400 border-blue-500/20",
     },
     {
-      id: 2,
-      title: "Rooftop Solar String 4 efficiency drop",
+      id: 3,
+      title: "Rooftop Solar String 4 DC current efficiency drop (-22%)",
       time: "12:10",
-      site: "Solar PV Rooftop Array",
+      site: "Campus Solar PV Rooftop",
+      facilityCode: "SOLAR_ROOFTOP",
       severity: "High",
       severityColor: "bg-rose-500/20 text-rose-300 border-rose-500/30",
       status: "Investigating",
       statusColor: "bg-amber-500/10 text-amber-400 border-amber-500/20",
     },
     {
-      id: 3,
-      title: "Power factor below threshold (0.82 pf)",
+      id: 4,
+      title: "Overhead water transfer pump running during peak grid tariff window",
+      time: "11:20",
+      site: "Yunus Khan Scholars Garden 1 (YKSG-1)",
+      facilityCode: "YKSG-1",
+      severity: "Medium",
+      severityColor: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+      status: "Open",
+      statusColor: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+    },
+    {
+      id: 5,
+      title: "Dormitory wing off-peak power factor below 0.85 pf",
       time: "08:15",
-      site: "Yunus Khan Scholar Garden",
+      site: "Rowshan Ara Scholars Garden 1 (RASG-1)",
+      facilityCode: "RASG-1",
       severity: "Low",
       severityColor: "bg-slate-800 text-slate-300 border-slate-700",
       status: "Snoozed",
@@ -125,10 +175,12 @@ export function VolteraOverviewDashboard({
     },
   ];
 
-  // Buildings ranking data
+  // Buildings ranking data with FabLab featured
   const buildingRankingsData = [
     {
-      name: "Academic Building 01",
+      name: "Academic Building 1 (AB-1)",
+      code: "AB-1",
+      badge: "Engineering & Tech",
       delta: "+8.2%",
       isPositive: false,
       kwh: "12,450 kWh",
@@ -136,7 +188,9 @@ export function VolteraOverviewDashboard({
       barColor: "bg-rose-500",
     },
     {
-      name: "Academic Building 02",
+      name: "Academic Building 2 (AB-2)",
+      code: "AB-2",
+      badge: "Computing & IT",
       delta: "+3.2%",
       isPositive: false,
       kwh: "9,820 kWh",
@@ -144,7 +198,9 @@ export function VolteraOverviewDashboard({
       barColor: "bg-amber-500",
     },
     {
-      name: "Yunus Khan Scholar Garden",
+      name: "YKSG-1 (Male Dormitory)",
+      code: "YKSG-1",
+      badge: "Scholars Garden",
       delta: "-2.5%",
       isPositive: true,
       kwh: "8,750 kWh",
@@ -152,12 +208,34 @@ export function VolteraOverviewDashboard({
       barColor: "bg-purple-500",
     },
     {
-      name: "Central Library",
-      delta: "-5.2%",
+      name: "FabLab (Maker & Prototyping)",
+      code: "FabLab",
+      badge: "3D Print • Laser • CNC",
+      delta: "+14.6%",
+      isPositive: false,
+      kwh: "6,420 kWh",
+      mwh: "6.4 MWh",
+      barColor: "bg-[#ff5500]",
+    },
+    {
+      name: "RASG-1 (Female Dormitory)",
+      code: "RASG-1",
+      badge: "Rowshan Ara Garden",
+      delta: "-3.1%",
       isPositive: true,
-      kwh: "7,042 kWh",
-      mwh: "7.0 MWh",
+      kwh: "5,910 kWh",
+      mwh: "5.9 MWh",
       barColor: "bg-cyan-500",
+    },
+    {
+      name: "Academic Building 4 (AB-4)",
+      code: "AB-4",
+      badge: "Science & Health",
+      delta: "-1.8%",
+      isPositive: true,
+      kwh: "5,320 kWh",
+      mwh: "5.3 MWh",
+      barColor: "bg-emerald-500",
     },
   ];
 
@@ -203,11 +281,41 @@ export function VolteraOverviewDashboard({
             <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#ff5500]" />
           </div>
 
-          {/* Site Filter Pill */}
-          <div className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#141620] border border-white/5 text-xs text-slate-300 cursor-pointer hover:border-white/10">
-            <Building2 className="w-3.5 h-3.5 text-neutral-400" />
-            <span>{selectedSite}</span>
-            <ChevronDown className="w-3 h-3 text-neutral-500 ml-1" />
+          {/* Site Filter Pill with Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowSiteDropdown(!showSiteDropdown)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#141620] border border-white/5 text-xs text-slate-300 hover:border-white/10 transition-colors"
+            >
+              <Building2 className="w-3.5 h-3.5 text-neutral-400" />
+              <span>{selectedSite}</span>
+              <ChevronDown className="w-3 h-3 text-neutral-500 ml-1" />
+            </button>
+
+            {showSiteDropdown && (
+              <div className="absolute right-0 top-11 bg-[#141620] border border-white/10 rounded-xl p-1.5 shadow-2xl z-50 w-72 backdrop-blur-md space-y-0.5">
+                <div className="px-2.5 py-1 text-[10px] uppercase font-bold text-neutral-400 border-b border-white/5 tracking-wider">
+                  Select DIU Campus Facility
+                </div>
+                {siteOptions.map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => {
+                      setSelectedSite(opt);
+                      setShowSiteDropdown(false);
+                    }}
+                    className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between transition-colors ${
+                      selectedSite === opt
+                        ? "bg-[#ff5500]/20 text-[#ff5500] font-semibold"
+                        : "text-neutral-300 hover:bg-white/5"
+                    }`}
+                  >
+                    <span>{opt}</span>
+                    {selectedSite === opt && <Check className="w-3 h-3 text-[#ff5500]" />}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Time Filter Pill */}
@@ -419,30 +527,34 @@ export function VolteraOverviewDashboard({
 
                 {/* 7 Cylindrical Pillars */}
                 {weeklyConsumptionData.map((item) => {
-                  const total = item.ab01 + item.ab02 + item.yksg + item.lib;
-                  const heightPercent = Math.min(100, (total / 1600) * 100);
+                  const total = item.ab1 + item.ab2 + item.fablab + item.dorms;
+                  const heightPercent = Math.min(100, (total / 1800) * 100);
 
                   return (
                     <div key={item.day} className="flex flex-col items-center gap-2 relative z-10 w-10 sm:w-12 group">
                       {/* Floating Dark Tooltip on Anomaly Day (Wed) */}
                       {item.isAnomaly && (
-                        <div className="absolute -top-24 left-1/2 -translate-x-1/2 bg-[#0d0f16]/95 border border-white/10 rounded-xl p-2.5 shadow-2xl z-30 min-w-[150px] backdrop-blur-md">
+                        <div className="absolute -top-28 left-1/2 -translate-x-1/2 bg-[#0d0f16]/95 border border-white/10 rounded-xl p-2.5 shadow-2xl z-30 min-w-[175px] backdrop-blur-md">
                           <div className="text-[10px] space-y-1 font-mono">
                             <div className="flex justify-between items-center text-rose-400 font-bold">
-                              <span>| Academic 01</span>
+                              <span>| AB-1 (Engr)</span>
                               <span>736 kWh</span>
                             </div>
-                            <div className="flex justify-between items-center text-slate-300">
-                              <span>| Academic 02</span>
+                            <div className="flex justify-between items-center text-amber-400 font-bold">
+                              <span>| AB-2 (IT Labs)</span>
                               <span>387 kWh</span>
                             </div>
-                            <div className="flex justify-between items-center text-slate-400">
-                              <span>| Scholar Garden</span>
+                            <div className="flex justify-between items-center text-[#ff5500] font-bold">
+                              <span>| FabLab (CNC/3D)</span>
+                              <span>342 kWh</span>
+                            </div>
+                            <div className="flex justify-between items-center text-purple-400">
+                              <span>| YKSG-1 (Dorm)</span>
                               <span>253 kWh</span>
                             </div>
-                            <div className="flex justify-between items-center text-slate-500">
-                              <span>| Central Library</span>
-                              <span>232 kWh</span>
+                            <div className="flex justify-between items-center text-cyan-400">
+                              <span>| RASG-1 (Dorm)</span>
+                              <span>218 kWh</span>
                             </div>
                           </div>
                           {/* Little triangle arrow pointing down */}
@@ -454,22 +566,22 @@ export function VolteraOverviewDashboard({
                       <div
                         className={`w-8 sm:w-10 rounded-full flex flex-col justify-end overflow-hidden transition-all duration-300 ${
                           item.isAnomaly
-                            ? "bg-gradient-to-t from-purple-900 via-purple-600 to-purple-400 shadow-[0_0_25px_rgba(168,85,247,0.45)] ring-2 ring-purple-400/50"
+                            ? "bg-gradient-to-t from-purple-900 via-purple-600 to-[#ff5500] shadow-[0_0_25px_rgba(255,85,0,0.45)] ring-2 ring-[#ff5500]/60"
                             : "bg-[#1e2230] hover:bg-[#252b3d]"
                         }`}
                         style={{ height: `${heightPercent * 2.2}px` }}
                       >
                         {/* Internal stacked cylinder bands */}
-                        <div className="w-full h-1/4 bg-white/20 border-b border-white/10 rounded-t-full" />
+                        <div className="w-full h-1/4 bg-[#ff5500]/40 border-b border-white/10 rounded-t-full" />
+                        <div className="w-full h-1/4 bg-purple-500/30 border-b border-white/10" />
                         <div className="w-full h-1/4 bg-white/10 border-b border-white/10" />
-                        <div className="w-full h-1/4 bg-white/5 border-b border-white/10" />
-                        <div className="w-full h-1/4 bg-transparent" />
+                        <div className="w-full h-1/4 bg-white/5" />
                       </div>
 
                       {/* Day Label */}
                       <span
                         className={`text-[11px] font-semibold ${
-                          item.isAnomaly ? "text-purple-400 font-bold" : "text-neutral-500"
+                          item.isAnomaly ? "text-[#ff5500] font-bold" : "text-neutral-500"
                         }`}
                       >
                         {item.day}
@@ -484,19 +596,19 @@ export function VolteraOverviewDashboard({
             <div className="flex items-center justify-center gap-6 pt-2 text-[11px] text-neutral-400 flex-wrap">
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-white" />
-                <span>Academic Building 01</span>
+                <span>AB-1 & AB-2 (Academic)</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
-                <span>Academic Building 02</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-[#ff5500]" />
+                <span className="font-semibold text-slate-200">FabLab (Maker & Prototyping)</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-                <span>Scholar Garden</span>
+                <span>YKSG & RASG (Scholars Gardens)</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" />
-                <span>Central Library</span>
+                <span>Clean Rooftop Solar</span>
               </div>
             </div>
           </div>
@@ -509,7 +621,7 @@ export function VolteraOverviewDashboard({
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-white tracking-tight">Consumption by Sites</h3>
               <Link href="/buildings" className="text-neutral-400 hover:text-white text-[11px]">
-                View breakdown
+                View all 9 facilities →
               </Link>
             </div>
 
@@ -519,13 +631,25 @@ export function VolteraOverviewDashboard({
                   <div className="flex items-center gap-2">
                     <span className={`w-1 h-7 rounded-full ${b.barColor}`} />
                     <div>
-                      <div className="font-semibold text-slate-200">{b.name}</div>
-                      <div
-                        className={`text-[10px] font-mono ${
-                          b.isPositive ? "text-emerald-400" : "text-rose-400"
-                        }`}
-                      >
-                        {b.delta}
+                      <div className="font-semibold text-slate-200 flex items-center gap-1.5">
+                        <span>{b.name}</span>
+                        {b.code === "FabLab" && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#ff5500]/20 text-[#ff5500] font-mono font-bold border border-[#ff5500]/30">
+                            Maker Lab
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span
+                          className={`text-[10px] font-mono ${
+                            b.isPositive ? "text-emerald-400" : "text-rose-400"
+                          }`}
+                        >
+                          {b.delta}
+                        </span>
+                        <span className="text-[10px] text-neutral-500 font-sans">
+                          {b.badge}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -555,7 +679,14 @@ export function VolteraOverviewDashboard({
                   className="p-4 rounded-xl bg-[#181a24] border border-white/5 space-y-3"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-200">{rec.tag}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-slate-200">{rec.tag}</span>
+                      {rec.badge && (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-neutral-300 font-mono font-semibold">
+                          {rec.badge}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#ff5500]/20 text-[#ff5500] font-mono">
                       AI
                     </span>

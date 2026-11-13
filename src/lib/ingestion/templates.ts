@@ -17,10 +17,11 @@ export const INGESTION_TEMPLATES: Record<string, IngestionTemplate> = {
     description: "For importing sub-station incomer readings and academic/dormitory building consumption logs.",
     headers: ["timestamp", "building_code", "kwh_consumed", "peak_demand_kw", "power_factor", "notes"],
     sampleRows: [
-      ["2026-11-12 08:00:00", "AB-01", "345.5", "110.2", "0.95", "Morning lecture hall baseline"],
-      ["2026-11-12 08:00:00", "AB-02", "410.0", "135.8", "0.93", "Computer labs startup load"],
-      ["2026-11-12 08:00:00", "YK-SG", "180.2", "65.0", "0.96", "Dormitory morning cycle"],
-      ["2026-11-12 12:00:00", "AB-01", "520.4", "148.0", "0.94", "Midday class peak"],
+      ["2026-11-12 08:00:00", "AB-1", "345.5", "110.2", "0.95", "Morning lecture hall baseline"],
+      ["2026-11-12 08:00:00", "AB-2", "410.0", "135.8", "0.93", "Computer labs startup load"],
+      ["2026-11-12 08:00:00", "YKSG-1", "180.2", "65.0", "0.96", "Dormitory morning cycle"],
+      ["2026-11-12 10:00:00", "FabLab", "295.4", "98.5", "0.91", "Laser cutters & 3D print farm prototyping"],
+      ["2026-11-12 12:00:00", "AB-1", "520.4", "148.0", "0.94", "Midday class peak"],
     ],
   },
 
@@ -83,9 +84,10 @@ export const INGESTION_TEMPLATES: Record<string, IngestionTemplate> = {
       "notes",
     ],
     sampleRows: [
-      ["2026-11-12 08:00:00", "GRID_SUPPLY", "AB-01", "340.5", "0", "0", "0", "0", "0", "0", "105.0", "0.95", "Grid load"],
+      ["2026-11-12 08:00:00", "GRID_SUPPLY", "AB-1", "340.5", "0", "0", "0", "0", "0", "0", "105.0", "0.95", "Grid load"],
+      ["2026-11-12 10:00:00", "GRID_SUPPLY", "FabLab", "280.0", "0", "0", "0", "0", "0", "0", "95.0", "0.91", "FabLab maker load"],
       ["2026-11-12 12:00:00", "SOLAR_ROOFTOP", "", "0", "620.0", "0", "0", "0", "0", "0", "205.0", "0.98", "Solar peak"],
-      ["2026-11-12 12:00:00", "CAMPUS_GENSET", "AB-01", "0", "0", "45.5", "1.5", "135.0", "0", "0", "90.0", "0.92", "Generator run"],
+      ["2026-11-12 12:00:00", "CAMPUS_GENSET", "AB-1", "0", "0", "45.5", "1.5", "135.0", "0", "0", "90.0", "0.92", "Generator run"],
       ["2026-11-12 12:00:00", "BIOGAS_PILOT", "", "0", "0", "0", "0", "0", "8.5", "14.2", "4.0", "0.90", "Biogas pilot"],
     ],
   },

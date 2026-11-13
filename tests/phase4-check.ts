@@ -39,7 +39,7 @@ async function runPhase4Checks() {
       }),
     ]);
 
-    assert(buildings.length === 5, "All 5 DIU campus facilities available for AI intelligence");
+    assert(buildings.length === 9, "All 9 DIU campus facilities available for AI intelligence (AB-1..4, YKSG-1..2, RASG-1..2, FabLab)");
     assert(energySources.length === 4, "4 Energy sources available (Grid, Solar, Diesel, Biogas)");
     assert(metrics.length > 0, "Historical telemetry records queryable for AI training/evaluation");
 
@@ -126,8 +126,8 @@ async function runPhase4Checks() {
 
     // 3C. Building-wise Forecasts
     assert(
-      demandForecast.buildingForecasts.length === 5,
-      "Forecast: Building-wise demand forecasted for all 5 campus facilities"
+      demandForecast.buildingForecasts.length === 9,
+      "Forecast: Building-wise demand forecasted for all 9 campus facilities"
     );
     const buildingsForecastValid = demandForecast.buildingForecasts.every(
       (b) => b.forecastNext24hKwh > 0 && b.forecastNext7dKwh > 0 && b.peakDemandKw > 0
@@ -203,8 +203,8 @@ async function runPhase4Checks() {
 
     // 6. BUILDING ENERGY INTELLIGENCE
     assert(
-      anomalyResult.buildingIntelligence.length === 5,
-      "Building Intelligence: Diagnostics generated for all 5 buildings"
+      anomalyResult.buildingIntelligence.length === 9,
+      "Building Intelligence: Diagnostics generated for all 9 buildings"
     );
     const biValid = anomalyResult.buildingIntelligence.every(
       (bi) =>

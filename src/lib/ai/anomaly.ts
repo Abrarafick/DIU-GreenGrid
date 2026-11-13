@@ -114,9 +114,13 @@ export function detectEnergyAnomalies(
       const kwh = m.kwhConsumed || 0;
       const timeStr = `${d.toLocaleDateString([], { month: "short", day: "numeric" })} ${String(hour).padStart(2, "0")}:00`;
 
-      // 1A. UNUSUAL_NIGHTTIME_CONSUMPTION (Academic facilities between 22:00 and 06:00)
-      if (b.code !== "YK-SG" && (hour >= 22 || hour < 6)) {
-        const expectedNightly = mean * 0.32;
+      // 1A. UNUSUAL_NIGHTTIME_CONSUMPTION (Academic facilities & Maker lab between 22:00 and 06:00)
+      const isResidential = b.code.startsWith("YKSG") || b.code.startsWith("RASG") || b.code === "YK-SG";
+      const isMakerLab = b.code === "FabLab";
+      
+      if (!isResidential && (hour >= 22 || hour < 6)) {
+        // FabLab has long 3D printing batch runs; academic buildings have minimal baseload
+        const expectedNightly = isMakerLab ? mean * 0.48 : mean * 0.32;
         if (kwh > expectedNightly * 1.55) {
           const devPct = Number((((kwh - expectedNightly) / expectedNightly) * 100).toFixed(1));
           anomalies.push({
@@ -127,7 +131,7 @@ export function detectEnergyAnomalies(
             buildingCode: b.code,
             buildingName: b.name,
             anomalyType: "UNUSUAL_NIGHTTIME_CONSUMPTION",
-            anomalyLabel: "Elevated Nighttime Baseline Draw",
+            anomalyLabel: isMakerLab ? "Unscheduled High-Current Prototyping Load" : "Elevated Nighttime Baseline Draw",
             severity: devPct > 85 ? "CRITICAL" : devPct > 50 ? "HIGH" : "MEDIUM",
             observedValue: Number(kwh.toFixed(1)),
             expectedBaseline: Number(expectedNightly.toFixed(1)),
@@ -135,10 +139,12 @@ export function detectEnergyAnomalies(
             deviationPercent: devPct,
             zScore: Number(((kwh - mean) / stdDev).toFixed(2)),
             supportingEvidence: `Measured nighttime draw of ${kwh.toFixed(1)} kWh at ${hour}:00 BST is ${devPct}% higher than the expected facility baseload of ${expectedNightly.toFixed(1)} kWh.`,
-            detectedRootCause:
-              "Likely cause: Unscheduled HVAC fan-coil units or architectural accent lighting left operational during overnight campus shutdown.",
-            suggestedAction:
-              "Dispatch facility patrol to inspect AHU floor distribution panels and audit automatic timer contactors.",
+            detectedRootCause: isMakerLab
+              ? "Industrial laser exhaust fans or unmonitored multiple heated print beds operating without automated power cutoff."
+              : "Likely cause: Unscheduled HVAC fan-coil units or architectural accent lighting left operational during overnight campus shutdown.",
+            suggestedAction: isMakerLab
+              ? "Verify FabLab automated equipment shutdown timers and inspect laser cutter auxiliary air compressor circuit."
+              : "Dispatch facility patrol to inspect AHU floor distribution panels and audit automatic timer contactors.",
             category: reliability.category,
             isResolved: false,
           });
@@ -176,7 +182,11 @@ export function detectEnergyAnomalies(
 
       // 1C. WEEKEND_OFFPEAK_ELEVATION (Weekend consumption check)
       if (isWeekend) {
-        const expectedWeekendKwh = b.code === "YK-SG" ? mean * 0.8 : mean * 0.35;
+        const expectedWeekendKwh = isResidential
+          ? mean * 0.8
+          : isMakerLab
+          ? mean * 0.5
+          : mean * 0.35;
         if (kwh > expectedWeekendKwh * 1.35) {
           const devPct = Number((((kwh - expectedWeekendKwh) / expectedWeekendKwh) * 100).toFixed(1));
           anomalies.push({

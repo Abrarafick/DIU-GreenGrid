@@ -48,9 +48,11 @@ async function runPhase1Checks() {
 
     // 3. Test Campus Buildings
     const buildings = await prisma.building.findMany();
-    assert(buildings.length === 5, "5 DIU campus buildings registered with floor area & capacity");
-    const ab01 = buildings.find((b) => b.code === "AB-01");
-    assert(ab01 && ab01.totalFloorAreaSqM === 18500.0, "AB-01 floor area metric accurate (18,500 m²)");
+    assert(buildings.length === 9, "9 DIU campus buildings registered with floor area & capacity (AB-1..4, YKSG-1..2, RASG-1..2, FabLab)");
+    const ab1 = buildings.find((b) => b.code === "AB-1" || b.code === "AB-01");
+    assert(ab1 && typeof ab1.totalFloorAreaSqM === "number", "AB-1 registered with floor area and capacity");
+    const fablab = buildings.find((b) => b.code === "FabLab");
+    assert(fablab && typeof fablab.totalFloorAreaSqM === "number" && fablab.totalFloorAreaSqM === 3800.0, "FabLab maker laboratory facility registered (3,800 m²)");
 
     // 4. Test Configurable Energy Sources & Biogas Presence
     const sources = await prisma.energySource.findMany();

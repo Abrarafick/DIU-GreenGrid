@@ -62,52 +62,92 @@ async function main() {
 
   console.log("✅ Seeded 3 RBAC Users (Admin, Facility Manager, Auditor/Viewer).");
 
-  // 3. Seed Campus Buildings
+  // 3. Seed Campus Buildings (Official 9 DIU Campus Facilities)
   const buildingsData = [
+    // Academic Buildings (AB)
     {
-      code: "AB-01",
-      name: "Academic Building 01 (Engineering & Tech)",
+      code: "AB-1",
+      name: "Academic Building 1 (Engineering & Tech)",
       campusLocation: "Ashulia Permanent Campus - East Quad",
-      totalFloorAreaSqM: 18500.0,
+      totalFloorAreaSqM: 16500.0,
       occupancyCapacity: 3500,
-      primaryFunction: "Academic & Lecture Halls",
-      baselineDailyKwh: 2400.0,
+      primaryFunction: "Academic Classrooms & Engineering Lecture Halls",
+      baselineDailyKwh: 2600.0,
     },
     {
-      code: "AB-02",
-      name: "Academic Building 02 (Computing & Labs)",
+      code: "AB-2",
+      name: "Academic Building 2 (Computing & IT Labs)",
       campusLocation: "Ashulia Permanent Campus - North Block",
-      totalFloorAreaSqM: 14200.0,
-      occupancyCapacity: 2800,
-      primaryFunction: "Computer & Research Labs",
+      totalFloorAreaSqM: 15200.0,
+      occupancyCapacity: 3000,
+      primaryFunction: "Computer Science & Software Engineering Labs",
       baselineDailyKwh: 3100.0,
     },
     {
-      code: "YK-SG",
-      name: "Yunus Khan Scholar Garden (Residence Hall)",
+      code: "AB-3",
+      name: "Academic Building 3 (Business & Entrepreneurship)",
+      campusLocation: "Ashulia Permanent Campus - West Block",
+      totalFloorAreaSqM: 14000.0,
+      occupancyCapacity: 2800,
+      primaryFunction: "Business School & Faculty Offices",
+      baselineDailyKwh: 2200.0,
+    },
+    {
+      code: "AB-4",
+      name: "Academic Building 4 (Science & Allied Health)",
+      campusLocation: "Ashulia Permanent Campus - South Block",
+      totalFloorAreaSqM: 14500.0,
+      occupancyCapacity: 2900,
+      primaryFunction: "Allied Health, Pharmacy & Life Science Labs",
+      baselineDailyKwh: 2400.0,
+    },
+    // Yunus Khan Scholars Garden (YKSG) - Male Dormitories
+    {
+      code: "YKSG-1",
+      name: "Yunus Khan Scholars Garden 1 (Male Residence Wing A)",
       campusLocation: "Ashulia Permanent Campus - South Lakefront",
-      totalFloorAreaSqM: 22000.0,
-      occupancyCapacity: 2200,
-      primaryFunction: "Student Dormitory",
-      baselineDailyKwh: 2800.0,
+      totalFloorAreaSqM: 13000.0,
+      occupancyCapacity: 1250,
+      primaryFunction: "Student Dormitory & Dining Commons",
+      baselineDailyKwh: 1900.0,
     },
     {
-      code: "LIB-AUD",
-      name: "Central Library & Cultural Auditorium",
-      campusLocation: "Ashulia Permanent Campus - Central Green",
-      totalFloorAreaSqM: 7800.0,
-      occupancyCapacity: 1200,
-      primaryFunction: "Central Library",
-      baselineDailyKwh: 950.0,
+      code: "YKSG-2",
+      name: "Yunus Khan Scholars Garden 2 (Male Residence Wing B)",
+      campusLocation: "Ashulia Permanent Campus - South Lakefront",
+      totalFloorAreaSqM: 13000.0,
+      occupancyCapacity: 1250,
+      primaryFunction: "Student Dormitory & Study Commons",
+      baselineDailyKwh: 1850.0,
+    },
+    // Rowshan Ara Scholars Garden (RASG) - Female Dormitories
+    {
+      code: "RASG-1",
+      name: "Rowshan Ara Scholars Garden 1 (Female Residence Wing A)",
+      campusLocation: "Ashulia Permanent Campus - North Lakeside",
+      totalFloorAreaSqM: 11500.0,
+      occupancyCapacity: 1100,
+      primaryFunction: "Student Dormitory & Dining Commons",
+      baselineDailyKwh: 1600.0,
     },
     {
-      code: "ADMIN",
-      name: "Central Administration & Operations Block",
-      campusLocation: "Ashulia Permanent Campus - Main Entrance",
-      totalFloorAreaSqM: 6500.0,
-      occupancyCapacity: 600,
-      primaryFunction: "Administration",
-      baselineDailyKwh: 820.0,
+      code: "RASG-2",
+      name: "Rowshan Ara Scholars Garden 2 (Female Residence Wing B)",
+      campusLocation: "Ashulia Permanent Campus - North Lakeside",
+      totalFloorAreaSqM: 11500.0,
+      occupancyCapacity: 1100,
+      primaryFunction: "Student Dormitory & Study Commons",
+      baselineDailyKwh: 1550.0,
+    },
+    // Other - FabLab (Makerspace & Prototyping Laboratory)
+    {
+      code: "FabLab",
+      name: "Fabrication Laboratory (FabLab DIU - Maker & Prototyping Center)",
+      campusLocation: "Ashulia Permanent Campus - Innovation Hub Ground Floor",
+      totalFloorAreaSqM: 3800.0,
+      occupancyCapacity: 450,
+      primaryFunction: "Digital Fabrication, 3D Printing, Laser Cutting & CNC Prototyping",
+      baselineDailyKwh: 1450.0,
     },
   ];
 
@@ -116,7 +156,7 @@ async function main() {
     const created = await prisma.building.create({ data: b });
     buildings.push(created);
   }
-  console.log(`✅ Seeded ${buildings.length} DIU Campus Buildings.`);
+  console.log(`✅ Seeded ${buildings.length} DIU Campus Buildings (AB-1..4, YKSG-1..2, RASG-1..2, FabLab).`);
 
   // 4. Seed Configurable Energy Sources (All 4 Sources: Grid, Solar, Diesel, Biogas)
   const energySourcesData = [
@@ -367,24 +407,48 @@ async function main() {
       for (const building of buildings) {
         let loadFactor = 0.35;
         if (!isWeekend) {
-          if (building.code === "AB-01" || building.code === "AB-02") {
-            if (hour === 8 || hour === 12 || hour === 16) loadFactor = 0.9 + Math.random() * 0.15;
-          } else if (building.code === "YK-SG") {
-            if (hour === 20 || hour === 0) loadFactor = 0.85 + Math.random() * 0.12;
-            else if (hour === 8 || hour === 12) loadFactor = 0.45;
-          } else if (building.code === "LIB-AUD") {
-            if (hour === 12 || hour === 16) loadFactor = 0.8 + Math.random() * 0.1;
+          if (building.code.startsWith("AB-")) {
+            if (hour === 8 || hour === 12 || hour === 16) {
+              loadFactor = 0.90 + Math.random() * 0.15;
+            } else {
+              loadFactor = 0.22 + Math.random() * 0.08;
+            }
+          } else if (building.code.startsWith("YKSG") || building.code.startsWith("RASG")) {
+            if (hour === 20 || hour === 0) {
+              loadFactor = 0.85 + Math.random() * 0.12;
+            } else if (hour === 8 || hour === 12) {
+              loadFactor = 0.40 + Math.random() * 0.08;
+            } else {
+              loadFactor = 0.65;
+            }
+          } else if (building.code === "FabLab") {
+            // Maker Lab & Digital Fabrication: high daytime CNC/laser load, moderate overnight 3D printing batches
+            if (hour === 8 || hour === 12 || hour === 16) {
+              loadFactor = 1.05 + Math.random() * 0.20; // Active prototyping peak
+            } else if (hour === 20 || hour === 0) {
+              loadFactor = 0.52 + Math.random() * 0.10; // Heated beds of overnight 3D printing farm
+            } else {
+              loadFactor = 0.35;
+            }
           } else {
             if (hour === 8 || hour === 12) loadFactor = 0.75;
           }
         } else {
-          loadFactor = building.code === "YK-SG" ? 0.7 : 0.25;
+          // Weekend load
+          if (building.code.startsWith("YKSG") || building.code.startsWith("RASG")) {
+            loadFactor = 0.72; // Active student dormitories
+          } else if (building.code === "FabLab") {
+            loadFactor = 0.45; // Weekend maker club prototyping
+          } else {
+            loadFactor = 0.20; // Vacant academic classrooms
+          }
         }
 
         const kwhConsumed = Number(((building.baselineDailyKwh / 6) * loadFactor).toFixed(1));
         const buildingSolarShare = (solarKwh / buildings.length);
         const buildingBiogasShare = (biogasKwh / buildings.length);
-        const carbonEmitted = Number(((kwhConsumed * gridFactor) + (building.code === "AB-01" ? dieselLitres * dieselFactor : 0)).toFixed(2));
+        const isDieselGenBuilding = building.code === "AB-1";
+        const carbonEmitted = Number(((kwhConsumed * gridFactor) + (isDieselGenBuilding ? dieselLitres * dieselFactor : 0)).toFixed(2));
         const carbonAvoided = Number(((buildingSolarShare + buildingBiogasShare) * gridFactor).toFixed(2));
 
         await prisma.energyMetric.create({
@@ -397,16 +461,16 @@ async function main() {
             isSimulated: true, // EXPLICIT TRANSPARENCY
             kwhConsumed,
             solarKwhGenerated: Number(buildingSolarShare.toFixed(1)),
-            dieselLitres: building.code === "AB-01" ? dieselLitres : 0.0,
-            generatorRuntimeHours: building.code === "AB-01" ? genRuntimeHours : 0.0,
-            generatorKwhGenerated: building.code === "AB-01" ? genKwh : 0.0,
+            dieselLitres: isDieselGenBuilding ? dieselLitres : 0.0,
+            generatorRuntimeHours: isDieselGenBuilding ? genRuntimeHours : 0.0,
+            generatorKwhGenerated: isDieselGenBuilding ? genKwh : 0.0,
             biogasM3Consumed: Number(buildingBiogasShare > 0 ? (biogasM3 / buildings.length).toFixed(2) : 0),
             biogasKwhGenerated: Number(buildingBiogasShare.toFixed(1)),
             peakDemandKw: Number((kwhConsumed / 4 * 1.25).toFixed(1)),
-            powerFactor: 0.94,
+            powerFactor: building.code === "FabLab" ? 0.91 : 0.95,
             carbonKgEmitted: carbonEmitted,
             carbonKgAvoided: carbonAvoided,
-            notes: "Simulated demonstration reading for DIU GreenGrid evaluation. Sources: Grid, Solar PV, Diesel Gen, Biogas Pilot.",
+            notes: `Simulated demonstration reading for DIU GreenGrid evaluation. Sources: Grid, Solar PV, Diesel Gen, Biogas Pilot. Facility: ${building.code}.`,
           },
         });
         metricCount++;
@@ -426,7 +490,7 @@ async function main() {
       assignedPersonnel: "Engr. Rafiqul Islam (Lead Electrical)",
       completionStatus: "VERIFIED",
       priority: "HIGH",
-      targetBuildingId: buildings.find((b) => b.code === "AB-02")?.id,
+      targetBuildingId: buildings.find((b) => b.code === "AB-2")?.id,
       beforeKwh: 1450.0,
       afterKwh: 620.0,
       verifiedKwhSavings: 830.0,
@@ -441,14 +505,14 @@ async function main() {
       notes: "Verified by Campus Facility Manager. 830 kWh/day permanent reduction achieved.",
     },
     {
-      title: "Yunus Khan Scholar Garden Water Pump Timing Alignment",
+      title: "Yunus Khan Scholars Garden Water Pump Timing Alignment",
       detectedIssue: "Dual 15 kW overhead water transfer pumps running concurrently during campus peak grid hours (11:00 - 13:00).",
       recommendedAction: "Reschedule primary pump cycle to morning solar-generation window (09:30 - 11:30) and secondary cycle to off-peak night (02:00).",
       assignedTeam: "Campus Facilities & Plumbing Unit",
       assignedPersonnel: "Md. Tariqul Anam (Water Systems Tech)",
       completionStatus: "VERIFIED",
       priority: "MEDIUM",
-      targetBuildingId: buildings.find((b) => b.code === "YK-SG")?.id,
+      targetBuildingId: buildings.find((b) => b.code === "YKSG-1")?.id,
       beforeKwh: 3200.0,
       afterKwh: 2750.0,
       verifiedKwhSavings: 450.0,
@@ -463,53 +527,56 @@ async function main() {
       notes: "Pumps aligned with rooftop solar generation curve.",
     },
     {
-      title: "Central Library 2nd Floor Daylight Harvesting & Zone Switching",
-      detectedIssue: "All perimeter and core lighting zones kept energized at 100% capacity despite abundant natural daylight from floor-to-ceiling perimeter windows.",
-      recommendedAction: "Rewire perimeter fixtures into independent daylight-zone circuits and train floor stewards on daylight utilization.",
-      assignedTeam: "Electrical Maintenance Unit",
-      assignedPersonnel: "Engr. Mahmudul Hasan",
-      completionStatus: "IN_PROGRESS",
-      priority: "MEDIUM",
-      targetBuildingId: buildings.find((b) => b.code === "LIB-AUD")?.id,
-      beforeKwh: 890.0,
-      afterKwh: null,
-      verifiedKwhSavings: null,
+      title: "FabLab 3D Printer Farm & Laser Cutter Exhaust Sequencing",
+      detectedIssue: "18x 3D printers and high-power industrial laser exhaust blowers running simultaneously during peak grid hours and idling on standby overnight.",
+      recommendedAction: "Shift long-duration 3D print jobs to 10:00-14:00 solar peak window; install smart current-sensing power cutoffs on laser cutter ventilation blowers.",
+      assignedTeam: "FabLab Digital Prototyping Operations & Electrical Maintenance",
+      assignedPersonnel: "Engr. Mahmudul Hasan (FabLab Operations Manager)",
+      completionStatus: "VERIFIED",
+      priority: "HIGH",
+      targetBuildingId: buildings.find((b) => b.code === "FabLab")?.id,
+      beforeKwh: 1200.0,
+      afterKwh: 750.0,
+      verifiedKwhSavings: 450.0,
       measurementPeriodDays: 30,
-      verificationMethod: "Pre-retrofit 14-day baseline established",
-      supportingEvidence: "Floor plan lux study showing >450 lux natural daylighting across 12 meters of perimeter desks.",
-      completionNotes: "Electrical contractor working on breaker sub-panel separation. Zone 1 and 2 rewired.",
-      sdgAlignment: "SDG_12",
-      notes: "Electrical contractor working on breaker sub-panel separation.",
+      verificationMethod: "FabLab smart sub-meter logger comparison",
+      verifiedCarbonSavingsKg: Number((450.0 * 0.637).toFixed(2)), // 286.65 kg CO2e
+      verifiedBy: "facility@diu.edu.bd",
+      verifiedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      supportingEvidence: "FabLab smart panel export showing 450 kWh/day peak demand reduction through staggered job sequencing.",
+      completionNotes: "Automatic shutoff relays active on laser exhaust. Print jobs queued with solar irradiance tracker.",
+      sdgAlignment: "SDG_9",
+      notes: "Maker lab prototyping equipment synchronized with campus clean solar generation.",
     },
     {
-      title: "Administrative Block Central Chiller Water Loop Temperature Reset",
-      detectedIssue: "Chilled water supply temperature held at 6.0°C during moderate autumn ambient conditions (26°C outdoor dry bulb).",
-      recommendedAction: "Implement ambient-reset schedule to raise chilled water temperature to 8.5°C during moderate ambient conditions.",
-      assignedTeam: "HVAC Operations",
-      assignedPersonnel: "Kazi Nazmul (Chiller Plant Specialist)",
+      title: "Rowshan Ara Scholars Garden Central Hot Water Heat Pump Scheduling",
+      detectedIssue: "Central heat pump circulation running continuously 24/7 without night temperature setback in dormitories.",
+      recommendedAction: "Implement timer setback schedule to pause circulation loops between 01:00 and 05:00 BST.",
+      assignedTeam: "HVAC & Thermal Systems Unit",
+      assignedPersonnel: "Kazi Nazmul (Thermal Specialist)",
       completionStatus: "COMPLETED",
       priority: "HIGH",
-      targetBuildingId: buildings.find((b) => b.code === "ADMIN")?.id,
+      targetBuildingId: buildings.find((b) => b.code === "RASG-1")?.id,
       beforeKwh: 1120.0,
       afterKwh: 880.0,
       verifiedKwhSavings: 240.0,
       measurementPeriodDays: 14,
-      verificationMethod: "Chiller plant energy transducer 14-day comparison",
+      verificationMethod: "Thermal sub-meter 14-day interval comparison",
       verifiedCarbonSavingsKg: Number((240.0 * 0.637).toFixed(2)),
-      supportingEvidence: "BMS trend log showing chilled water setpoint reset to 8.5°C with zero occupant comfort complaints.",
-      completionNotes: "Reset schedule validated. Pending 30-day final verification sign-off by Chief Engineer.",
+      supportingEvidence: "BMS trend log showing heat pump overnight setback schedule with zero hot water availability complaints.",
+      completionNotes: "Setback schedule validated. Final 30-day verification sign-off pending.",
       sdgAlignment: "SDG_13",
-      notes: "Thermodynamic lift reduction saves compressor electrical load.",
+      notes: "Circulation loop pause eliminates night thermal radiation losses.",
     },
     {
-      title: "Academic Building 01 Rooftop Solar Array String Diagnostic & Soiling Wash",
+      title: "Academic Building 1 Rooftop Solar Array String Diagnostic & Soiling Wash",
       detectedIssue: "String Inverter #4 DC current output lagging adjacent inverter strings by 22% due to dust accumulation from nearby construction.",
       recommendedAction: "Perform module surface washing with deionized water and check string MC4 connector contact resistance.",
       assignedTeam: "Solar Inverter Maintenance Unit",
       assignedPersonnel: "Md. Al-Amin (Solar Specialist)",
       completionStatus: "IDENTIFIED",
       priority: "HIGH",
-      targetBuildingId: buildings.find((b) => b.code === "AB-01")?.id,
+      targetBuildingId: buildings.find((b) => b.code === "AB-1")?.id,
       beforeKwh: 580.0,
       afterKwh: null,
       verifiedKwhSavings: null,
@@ -553,11 +620,11 @@ async function main() {
       currentValue: 0.074,
       unit: "kWh/m²",
       status: "ON_TRACK",
-      calculationMethod: "Total Monitored Campus Consumption (kWh) / Total Gross Floor Area (69,000 m²)",
+      calculationMethod: "Total Monitored Campus Consumption (kWh) / Total Gross Floor Area (103,000 m²)",
       remainingGap: 0.004,
       targetYear: 2026,
       responsibleUnit: "Directorate of Campus Operations",
-      notes: "Baseline established from pre-monitoring campus utility records.",
+      notes: "Baseline established from pre-monitoring campus utility records across 9 facilities.",
     },
     {
       title: "Maintain 100% Digital Sub-Metering Coverage of Campus Facilities",
@@ -572,7 +639,7 @@ async function main() {
       remainingGap: 0.0,
       targetYear: 2026,
       responsibleUnit: "Electrical Infrastructure & Automation Unit",
-      notes: "All 5 core campus buildings (AB-01, AB-02, YK-SG, LIB-AUD, ADMIN) integrated.",
+      notes: "All 9 official DIU campus facilities (AB-1, AB-2, AB-3, AB-4, YKSG-1, YKSG-2, RASG-1, RASG-2, FabLab) integrated.",
     },
     {
       title: "Reduce Unoccupied Off-Peak Energy Waste by 25%",

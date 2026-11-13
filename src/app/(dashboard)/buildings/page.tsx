@@ -100,7 +100,9 @@ export default async function BuildingsPage() {
           <div
             key={b.id}
             className={`p-5 rounded-2xl border space-y-4 transition-all ${
-              b.isHighConsumer
+              b.code === "FabLab"
+                ? "bg-slate-900/95 border-[#ff5500]/50 shadow-lg shadow-[#ff5500]/15 ring-1 ring-[#ff5500]/30"
+                : b.isHighConsumer
                 ? "bg-slate-900/95 border-cyan-500/40 shadow-lg shadow-cyan-950/20"
                 : "bg-slate-900/80 border-slate-800"
             }`}
@@ -108,16 +110,26 @@ export default async function BuildingsPage() {
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs font-bold text-emerald-400">{b.code}</span>
-                  {b.isHighConsumer && (
+                  <span className={`font-mono text-xs font-bold ${b.code === "FabLab" ? "text-[#ff5500]" : "text-emerald-400"}`}>
+                    {b.code}
+                  </span>
+                  {b.code === "FabLab" ? (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#ff5500]/20 text-[#ff5500] border border-[#ff5500]/40 font-bold uppercase">
+                      Prototyping Maker Lab
+                    </span>
+                  ) : b.isHighConsumer ? (
                     <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold uppercase">
                       High Load #{idx + 1}
                     </span>
-                  )}
+                  ) : null}
                 </div>
                 <h3 className="text-sm font-bold text-white mt-0.5">{b.name}</h3>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+              <span className={`text-[10px] px-2 py-0.5 rounded border ${
+                b.code === "FabLab"
+                  ? "bg-[#ff5500]/10 text-[#ff5500] border-[#ff5500]/30 font-medium"
+                  : "bg-slate-800 text-slate-300 border-slate-700"
+              }`}>
                 {b.primaryFunction.split("&")[0]}
               </span>
             </div>
