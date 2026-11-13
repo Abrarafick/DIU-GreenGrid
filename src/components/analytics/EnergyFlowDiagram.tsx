@@ -1,13 +1,24 @@
 "use client";
 
 import React, { useState } from "react";
-import { Zap, Sun, Flame, Leaf, Building2, ShieldCheck, ArrowRight } from "lucide-react";
+import { Zap, Sun, Flame, Leaf, Building2, ShieldCheck, ArrowRight, Activity, HelpCircle } from "lucide-react";
 
 interface EnergyFlowProps {
   flowData: {
     sources: Array<{ name: string; kwh: number; type: string; color: string }>;
-    hub: { name: string; totalThroughputKwh: number };
+    hub: {
+      name: string;
+      totalThroughputKwh: number;
+      residualKwh?: number;
+      residualPercent?: number;
+    };
     consumers: Array<{ code: string; name: string; kwh: number; percentage: number }>;
+    residualBreakdown?: {
+      label: string;
+      kwh: number;
+      percent: number;
+      explanation: string;
+    };
     architectureNotice: string;
   };
 }
@@ -15,6 +26,7 @@ interface EnergyFlowProps {
 export function EnergyFlowDiagram({ flowData }: EnergyFlowProps) {
   const [hoveredSource, setHoveredSource] = useState<string | null>(null);
   const [hoveredConsumer, setHoveredConsumer] = useState<string | null>(null);
+  const [showResidualModal, setShowResidualModal] = useState(false);
 
   const getSourceIcon = (type: string) => {
     switch (type) {
@@ -30,7 +42,9 @@ export function EnergyFlowDiagram({ flowData }: EnergyFlowProps) {
     }
   };
 
-  const totalKwh = flowData.hub.totalThroughputKwh || 1;
+  const totalInputs = flowData.hub.totalThroughputKwh || 1;
+  const residual = flowData.hub.residualKwh ?? 0;
+  const residualPct = flowData.hub.residualPercent ?? 0;
 
   return (
     <div className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-5">
@@ -39,10 +53,10 @@ export function EnergyFlowDiagram({ flowData }: EnergyFlowProps) {
         <div>
           <h3 className="text-sm font-bold text-white flex items-center gap-2">
             <Zap className="w-4 h-4 text-emerald-400" />
-            Interactive Campus Energy Flow Architecture
+            Interactive Campus Energy Flow & Accounting Architecture
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            Synchronous electricity distribution from active power feeds through the campus substation bus into monitored facilities.
+            Synchronous electricity distribution with explicit energy balance residual and distribution loss accounting.
           </p>
         </div>
         <div className="text-[11px] text-amber-300/90 bg-amber-500/10 px-2.5 py-1 rounded border border-amber-500/20 flex items-center gap-1.5 self-start md:self-auto">
@@ -51,16 +65,16 @@ export function EnergyFlowDiagram({ flowData }: EnergyFlowProps) {
         </div>
       </div>
 
-      {/* 3-Column Flow Layout: Sources -> Hub -> Consumers */}
+      {/* 3-Column Flow Layout: Sources -> Hub with Residual -> Consumers */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
         {/* Left Column: Generation & Incomer Sources (4 Cols) */}
         <div className="lg:col-span-4 space-y-2.5">
           <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase block mb-1">
-            Active Energy Sources
+            Active Energy Inputs
           </span>
 
           {flowData.sources.map((source) => {
-            const pct = Number(((source.kwh / totalKwh) * 100).toFixed(1));
+            const pct = Number(((source.kwh / totalInputs) * 100).toFixed(1));
             const isHovered = hoveredSource === source.name;
             return (
               <div
@@ -94,7 +108,7 @@ export function EnergyFlowDiagram({ flowData }: EnergyFlowProps) {
           })}
         </div>
 
-        {/* Center Column: Central Substation Distribution Hub (4 Cols) */}
+        {/* Center Column: Central Substation Distribution Hub with Residual (4 Cols) */}
         <div className="lg:col-span-4 flex flex-col items-center justify-center p-5 rounded-2xl bg-gradient-to-b from-slate-950 to-slate-900 border border-slate-700/80 shadow-2xl relative">
           <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.3)] mb-2">
             <Zap className="w-6 h-6 fill-emerald-400/20" />
@@ -108,24 +122,39 @@ export function EnergyFlowDiagram({ flowData }: EnergyFlowProps) {
           </span>
 
           <div className="mt-3 text-center">
-            <div className="text-2xl font-extrabold text-emerald-400 font-mono tracking-tight">
-              {totalKwh.toLocaleString()}
+            <div className="text-2xl font-extrabold text-white font-mono tracking-tight">
+              {totalInputs.toLocaleString()}
             </div>
             <span className="text-[11px] text-slate-400 uppercase font-semibold">
-              Total Throughput (kWh)
+              Total Incomer Inputs (kWh)
             </span>
           </div>
 
-          <div className="w-full mt-4 pt-3 border-t border-slate-800 text-[10px] text-slate-400 flex items-center justify-between">
-            <span>Bus Voltage: 11 kV / 415 V</span>
-            <span className="text-emerald-400 font-bold">100% Synchronized</span>
+          {/* Energy Balance Residual Display (Unmasked) */}
+          <div className="w-full mt-3 p-2.5 rounded-xl bg-slate-950 border border-amber-500/30 text-xs space-y-1">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-amber-300 font-bold flex items-center gap-1">
+                <Activity className="w-3 h-3 text-amber-400" /> Balance Residual:
+              </span>
+              <span className="font-mono font-bold text-amber-300">
+                {residual > 0 ? `+${residual.toLocaleString()}` : residual.toLocaleString()} kWh ({residualPct}%)
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-400 leading-tight">
+              Physical 11kV transformer losses, distribution circuit impedance & unmetered auxiliary loads.
+            </p>
+          </div>
+
+          <div className="w-full mt-3 pt-2 border-t border-slate-800 text-[10px] text-slate-400 flex items-center justify-between">
+            <span>Bus: 11 kV / 415 V</span>
+            <span className="text-emerald-400 font-bold">Boundary Verified</span>
           </div>
         </div>
 
         {/* Right Column: Campus Consumer Facilities (4 Cols) */}
         <div className="lg:col-span-4 space-y-2">
           <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase block mb-1">
-            Monitored Campus Facilities
+            Monitored Building Loads
           </span>
 
           {flowData.consumers.map((c) => {

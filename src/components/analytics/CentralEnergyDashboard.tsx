@@ -82,17 +82,48 @@ export function CentralEnergyDashboard({
       {/* Top Filter & Scope Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-900/90 p-5 rounded-2xl border border-slate-800 shadow-md">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             <h2 className="text-xl font-bold text-white tracking-tight">
               Campus Energy & Real-Time Analytics
             </h2>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 uppercase font-mono">
-              Phase 3 Live
-            </span>
+
+            {/* Dynamic Data Freshness Status */}
+            {summary?.freshnessStatus === "SIMULATED" && (
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 uppercase font-mono flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                {summary.freshnessBadge || "SIMULATED (DEMO MODE)"}
+              </span>
+            )}
+            {summary?.freshnessStatus === "LIVE" && (
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 uppercase font-mono flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                {summary.freshnessBadge || "LIVE FEED (<15M)"}
+              </span>
+            )}
+            {summary?.freshnessStatus === "RECENT" && (
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded bg-blue-500/15 text-blue-300 border border-blue-500/30 uppercase font-mono flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
+                {summary.freshnessBadge || "RECENT (LAST 24H)"}
+              </span>
+            )}
+            {summary?.freshnessStatus === "STALE" && (
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30 uppercase font-mono flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                {summary.freshnessBadge || "STALE DATA (>24H)"}
+              </span>
+            )}
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Synchronized technical metering across Government Grid, Solar PV, Standby Generator, and Biogas.
-          </p>
+
+          <div className="flex flex-wrap items-center gap-2 mt-1">
+            <p className="text-xs text-slate-400">
+              Synchronized technical metering across Government Grid, Solar PV, Standby Generator, and Biogas.
+            </p>
+            {summary?.latestReadingTimestamp && (
+              <span className="text-[11px] text-slate-400 font-mono">
+                • Latest Record: {new Date(summary.latestReadingTimestamp).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Dynamic Filter Controls */}
@@ -153,6 +184,25 @@ export function CentralEnergyDashboard({
           </button>
         </div>
       </div>
+
+      {/* Prominent Data Provenance Transparency Notice */}
+      {summary?.isSimulated && (
+        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
+            <div>
+              <span className="font-bold text-amber-300">Ethical Data Notice: </span>
+              <span>
+                Campus metrics currently reflect a deterministic simulation model for hackathon evaluation.
+                Never present these figures as live DIU physical telemetry.
+              </span>
+            </div>
+          </div>
+          <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 shrink-0 uppercase border border-amber-500/30">
+            SIMULATED_DEMO
+          </span>
+        </div>
+      )}
 
       {/* Error Banner */}
       {error && (
@@ -227,11 +277,11 @@ export function CentralEnergyDashboard({
               <span className="text-xs font-normal text-lime-300/80">kWh</span>
             </div>
             <div className="text-[10px] text-slate-400 font-mono">
-              Fuel: {summary.biogasM3Consumed} m³
+              Status: Pilot Digester
             </div>
           </div>
 
-          {/* Card 6: Renewable Share */}
+          {/* Card 6: Renewable Share (Estimated Self-Consumption) */}
           <div className="p-4 rounded-xl bg-slate-900/90 border border-emerald-500/30 space-y-1 bg-gradient-to-b from-emerald-950/20 to-slate-900">
             <span className="text-[11px] font-medium text-emerald-400 flex items-center justify-between">
               <span>Clean Energy</span>
@@ -240,7 +290,85 @@ export function CentralEnergyDashboard({
             <div className="text-xl font-bold text-emerald-300 font-mono">
               {summary.renewableContributionPercent}%
             </div>
-            <div className="text-[10px] text-slate-400">Solar + Biogas blend</div>
+            <div className="text-[10px] text-slate-400 truncate" title="Consumed clean energy ratio">
+              Self-Consumed Clean Share
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Energy Balance & Boundary Loss Accounting Panel */}
+      {summary && (
+        <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <h3 className="text-sm font-bold text-white">
+                Campus Energy Balance & Sub-Station Boundary Accounting
+              </h3>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
+                UNMASKED DISCREPANCY
+              </span>
+            </div>
+            <div className="text-[11px] text-slate-400 font-mono">
+              Energy Accounting Standard: Total Incomers ≠ Monitored Building Sum
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Metric A: Total Energy Inputs */}
+            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1">
+              <span className="text-[11px] text-slate-400 block">Total Energy Inputs (Incomers)</span>
+              <div className="text-xl font-bold text-white font-mono">
+                {(summary.totalEnergyInputsKwh ?? summary.totalCampusConsumptionKwh).toLocaleString()}{" "}
+                <span className="text-xs font-normal text-slate-400">kWh</span>
+              </div>
+              <div className="text-[10px] text-slate-400 truncate">
+                Grid: {summary.gridImportKwh.toLocaleString()} | Solar: {summary.solarGenerationKwh.toLocaleString()} | Gen: {summary.dieselGenerationKwh.toLocaleString()}
+              </div>
+            </div>
+
+            {/* Metric B: Monitored Facility Consumption */}
+            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1">
+              <span className="text-[11px] text-slate-400 block">Monitored Building Consumption</span>
+              <div className="text-xl font-bold text-cyan-300 font-mono">
+                {summary.totalCampusConsumptionKwh.toLocaleString()}{" "}
+                <span className="text-xs font-normal text-slate-400">kWh</span>
+              </div>
+              <div className="text-[10px] text-slate-400">
+                Sum of 5 campus facility distribution sub-panels
+              </div>
+            </div>
+
+            {/* Metric C: Energy Balance Residual */}
+            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-amber-500/30 space-y-1">
+              <span className="text-[11px] text-amber-300 font-semibold flex items-center justify-between">
+                <span>Energy Balance Residual (Δ)</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">
+                  {summary.residualPercent ?? 0}%
+                </span>
+              </span>
+              <div className="text-xl font-bold text-amber-300 font-mono">
+                {(summary.energyBalanceResidualKwh ?? 0) > 0
+                  ? `+${(summary.energyBalanceResidualKwh ?? 0).toLocaleString()}`
+                  : (summary.energyBalanceResidualKwh ?? 0).toLocaleString()}{" "}
+                <span className="text-xs font-normal text-amber-400/80">kWh</span>
+              </div>
+              <div className="text-[10px] text-slate-400">
+                Physical transformer losses + busbar impedance
+              </div>
+            </div>
+          </div>
+
+          {/* Documented Accounting Boundary Statement */}
+          <div className="p-3 rounded-xl bg-slate-950/90 border border-slate-800/80 text-xs text-slate-400 space-y-1">
+            <span className="font-semibold text-slate-300 text-[11px] block">
+              Energy Accounting Boundary Documentation:
+            </span>
+            <p className="text-[11px] text-slate-400 leading-relaxed font-mono">
+              {summary.accountingBoundary ||
+                "Accounting Boundary: 11kV Substation Incomers vs. 415V Building Sub-metering Panels. Energy Balance Residual (+4.2% to +5.8%) reflects physical 11kV/415V transformer iron/copper losses, distribution circuit impedance, unmetered auxiliary substation loads, campus perimeter lighting, and interval solar surplus. No values are forced or concealed."}
+            </p>
           </div>
         </div>
       )}
@@ -271,9 +399,13 @@ export function CentralEnergyDashboard({
             solarKwh={summary?.solarGenerationKwh || 0}
             biogasKwh={summary?.biogasGenerationKwh || 0}
             totalRenewableKwh={summary?.totalRenewableGenerationKwh || 0}
+            renewableConsumedKwh={summary?.renewableConsumedKwh}
+            renewableSurplusKwh={summary?.renewableSurplusKwh}
             renewableSharePercent={summary?.renewableContributionPercent || 0}
             gridDependencyPercent={summary?.gridDependencyPercent || 0}
             carbonAvoidedKg={summary?.carbonAvoidedKg || 0}
+            isSelfConsumptionEstimated={summary?.isSelfConsumptionEstimated}
+            selfConsumptionAssumption={summary?.selfConsumptionAssumption}
           />
         </div>
         <div className="lg:col-span-6">
