@@ -1,0 +1,169 @@
+// Prisma Schema for DIU GreenGrid
+// Software-First Smart Campus Energy & Sustainability Monitoring System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User & Role-Based Access Control
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         String   @default("AUDITOR_VIEWER") // "ADMIN", "FACILITY_MANAGER", "AUDITOR_VIEWER"
+  department   String   @default("Campus Facilities")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Campus Building Entity
+model Building {
+  id                  String   @id @default(uuid())
+  code                String   @unique // e.g. "AB-01", "AB-02", "YK-SG", "LIB", "ADMIN"
+  name                String   // e.g. "Academic Building 01", "Yunus Khan Scholar Garden"
+  campusLocation      String   @default("Ashulia Permanent Campus")
+  totalFloorAreaSqM   Float    // Gross floor area in square meters for Energy Use Intensity (EUI)
+  occupancyCapacity   Int      // Nominal student/staff capacity
+  primaryFunction     String   // "Academic & Lecture Halls", "Computer & Research Labs", "Student Dormitory", "Central Library", "Administration"
+  baselineDailyKwh    Float    // Expected normal daily baseline in kWh
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  metrics             EnergyMetric[]
+  actionItems         ActionImprovement[]
+}
+
+// Configurable Energy Source (Grid, Solar PV, Backup Generator, Biogas Pilot)
+// No assumed battery storage or automated electrical controls.
+model EnergySource {
+  id                 String   @id @default(uuid())
+  code               String   @unique // "GRID_SUPPLY", "SOLAR_ROOFTOP", "CAMPUS_GENSET", "BIOGAS_PILOT"
+  name               String   // "Configured National Grid Incomer", "Rooftop Solar PV Arrays", "Emergency Diesel Generator", "Biogas Pilot Plant"
+  sourceType         String   // "GRID", "SOLAR", "GENERATOR", "BIOGAS"
+  ratedCapacityKw    Float    // Maximum peak capacity rating in kW
+  isRenewable        Boolean  @default(false)
+  configuredProvider String   // Configurable utility/operator
+  monitoringMethod   String   // "DIGITAL_SUBMETER", "INVERTER_PORTAL_EXPORT", "TECHNICAL_FUEL_LOGBOOK", "UNVERIFIED_PENDING_METERING"
+  operationalStatus  String   @default("OPERATIONAL") // "OPERATIONAL", "UNVERIFIED_PILOT", "UNAVAILABLE"
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  metrics            EnergyMetric[]
+}
+
+// Data Provenance & Ingestion Source Metadata
+// Stamped on every data point to ensure 100% transparency between real and simulated data.
+model DataSourceProvenance {
+  id               String   @id @default(uuid())
+  code             String   @unique
+  name             String   // e.g. "Inverter Cloud API Adapter", "Facility Monthly CSV Import", "Manual Logbook Entry", "Demonstration Simulation Engine"
+  ingestionMethod  String   // "API_CONNECTOR", "CSV_EXCEL_IMPORT", "MANUAL_ENTRY", "DEMO_SIMULATION"
+  isSimulated      Boolean  @default(false) // Strictly true for all demo/synthetic records
+  confidenceRating Float    @default(1.0) // 0.0 to 1.0 (Simulation = 0.0, Verified Inverter API = 1.0)
+  sourceDetails    String   // Description or connection endpoint
+  description      String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  metrics          EnergyMetric[]
+}
+
+// Energy Telemetry & Consumption Record
+// Strictly technical: kWh, kW, litres of diesel, carbon offsets. ZERO financial data.
+model EnergyMetric {
+  id                 String   @id @default(uuid())
+  timestamp          DateTime
+  
+  // Relations
+  buildingId         String?
+  building           Building? @relation(fields: [buildingId], references: [id], onDelete: SetNull)
+  
+  energySourceId     String?
+  energySource       EnergySource? @relation(fields: [energySourceId], references: [id], onDelete: SetNull)
+  
+  provenanceId       String
+  provenance         DataSourceProvenance @relation(fields: [provenanceId], references: [id], onDelete: Restrict)
+  
+  // Provenance flag copied for high-speed indexing & visual UI warnings
+  isSimulated        Boolean  @default(false)
+
+  // Technical Measurements
+  kwhConsumed        Float    @default(0.0) // Energy drawn from grid or consumed by building
+  solarKwhGenerated  Float    @default(0.0) // Solar PV yield generated
+  dieselLitres       Float    @default(0.0) // Technical monitoring: Diesel fuel volume consumed by generator
+  generatorRuntimeHours Float @default(0.0) // Technical monitoring: Generator operating hours
+  peakDemandKw       Float?   // Peak kW observed in period
+  powerFactor        Float?   // Observed power factor (0.00 to 1.00)
+  
+  // Calculated Emissions Metrics (Technical)
+  carbonKgEmitted    Float    @default(0.0) // Calculated GHG emissions based on active emission factor
+  carbonKgAvoided    Float    @default(0.0) // GHG emissions avoided via solar clean generation
+
+  notes              String?
+  createdAt          DateTime @default(now())
+
+  @@index([timestamp])
+  @@index([buildingId, timestamp])
+  @@index([isSimulated])
+}
+
+// Configurable Emission Factors, Methodologies & Assumptions
+// Documents exact sources, conversion methodology, and explicit non-authoritative reference status.
+model EmissionFactorConfig {
+  id                  String   @id @default(uuid())
+  factorKey           String   @unique // "GRID_ELECTRICITY_CO2", "DIESEL_FUEL_CO2"
+  factorName          String   // "National Grid Electricity Carbon Intensity", "Diesel Stationary Combustion Emission Factor"
+  unit                String   // "kg CO2e / kWh", "kg CO2e / Litre"
+  value               Float    // e.g. 0.637 kg CO2e/kWh, 2.68 kg CO2e/Litre
+  sourceDocumentation String   // Reference document / research paper citation
+  methodology         String   // Exact mathematical / stoichiometric calculation methodology
+  assumptions         String   // Key assumptions and boundary conditions
+  isAuthoritative     Boolean  @default(false) // Stamped false to indicate reference default status
+  isConfigurable      Boolean  @default(true)
+  updatedBy           String?
+  updatedAt           DateTime @updatedAt
+}
+
+// Action & Improvement Management
+// Tracks detected issues, team assignments, baseline vs after consumption, and verified kWh savings.
+model ActionImprovement {
+  id                   String   @id @default(uuid())
+  title                String
+  detectedIssue        String   // Problem description or AI-flagged anomaly
+  recommendedAction    String   // Operational or maintenance intervention
+  assignedTeam         String   // e.g. "Electrical Maintenance Unit", "HVAC Operations", "IT Infrastructure Support"
+  completionStatus     String   @default("IDENTIFIED") // "IDENTIFIED", "IN_PROGRESS", "COMPLETED_VERIFIED", "CANCELLED"
+  priority             String   @default("MEDIUM") // "LOW", "MEDIUM", "HIGH", "CRITICAL"
+  
+  targetBuildingId     String?
+  targetBuilding       Building? @relation(fields: [targetBuildingId], references: [id], onDelete: SetNull)
+  
+  beforeKwh            Float?   // Baseline measured consumption prior to intervention
+  afterKwh             Float?   // Measured consumption following intervention
+  verifiedKwhSavings   Float?   // Net verified kWh saved
+  verificationMethod   String?  // e.g. "30-day comparative sub-meter logging", "Before-and-after audit measurement"
+  
+  reportedAt           DateTime @default(now())
+  completedAt          DateTime?
+  notes                String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+// Security & Data Lineage Audit Log
+model AuditLog {
+  id           String   @id @default(uuid())
+  action       String   // e.g. "USER_LOGIN", "DATA_IMPORTED_CSV", "FACTOR_UPDATED", "ACTION_STATUS_CHANGED"
+  performedBy  String   // User email or "SYSTEM"
+  details      String
+  timestamp    DateTime @default(now())
+}
