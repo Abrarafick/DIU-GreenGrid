@@ -28,18 +28,18 @@ export function Sidebar() {
   const [alertsOpen, setAlertsOpen] = useState(true);
 
   return (
-    <aside className="w-64 bg-[#08140e]/90 border-r border-emerald-500/10 flex flex-col justify-between shrink-0 h-[calc(100vh-45px)] sticky top-[45px] select-none backdrop-blur-xl">
+    <aside className="w-64 bg-white/95 border-r border-slate-200/80 flex flex-col justify-between shrink-0 h-[calc(100vh-45px)] sticky top-[45px] select-none backdrop-blur-xl shadow-sm">
       {/* Top Section */}
       <div className="p-4 space-y-6 overflow-y-auto">
         {/* Brand Header */}
         <div className="flex items-center justify-between px-2 pt-1">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white shadow-[0_0_14px_rgba(16,185,129,0.5)]">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white shadow-[0_2px_8px_rgba(16,185,129,0.35)]">
               <Zap className="w-4 h-4 fill-white" />
             </div>
-            <span className="font-bold text-white text-base tracking-tight font-display">GreenGrid</span>
+            <span className="font-bold text-slate-900 text-base tracking-tight font-display">GreenGrid</span>
           </div>
-          <button className="text-emerald-400/50 hover:text-emerald-300 transition-colors">
+          <button className="text-slate-400 hover:text-slate-600 transition-colors">
             <PanelLeftClose className="w-4 h-4" />
           </button>
         </div>
@@ -51,11 +51,11 @@ export function Sidebar() {
             href="/"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
               pathname === "/"
-                ? "clay-button-primary text-white shadow-lg"
-                : "text-emerald-100/60 hover:text-white hover:bg-emerald-950/40"
+                ? "clay-button-primary text-white shadow-md"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
             }`}
           >
-            <LayoutDashboard className={`w-4 h-4 ${pathname === "/" ? "text-white" : "text-emerald-400/70"}`} />
+            <LayoutDashboard className={`w-4 h-4 ${pathname === "/" ? "text-white" : "text-emerald-600"}`} />
             <span>Overview</span>
           </Link>
 
@@ -64,11 +64,11 @@ export function Sidebar() {
             href="/buildings"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
               pathname === "/buildings"
-                ? "clay-button-primary text-white shadow-lg"
-                : "text-emerald-100/60 hover:text-white hover:bg-emerald-950/40"
+                ? "clay-button-primary text-white shadow-md"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
             }`}
           >
-            <Building2 className={`w-4 h-4 ${pathname === "/buildings" ? "text-white" : "text-emerald-400/70"}`} />
+            <Building2 className={`w-4 h-4 ${pathname === "/buildings" ? "text-white" : "text-emerald-600"}`} />
             <span>Sites (9 Buildings)</span>
           </Link>
 
@@ -78,49 +78,49 @@ export function Sidebar() {
               onClick={() => setAlertsOpen(!alertsOpen)}
               className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition-all ${
                 pathname === "/ai-intelligence"
-                  ? "bg-emerald-950/60 border border-emerald-500/30 text-white"
-                  : "text-emerald-100/60 hover:text-white hover:bg-emerald-950/40"
+                  ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
               }`}
             >
               <div className="flex items-center gap-3">
-                <Bell className="w-4 h-4 text-emerald-400/70" />
+                <Bell className="w-4 h-4 text-emerald-600" />
                 <span>Alerts</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono clay-badge">
+                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 font-mono clay-badge">
                   16
                 </span>
                 {alertsOpen ? (
-                  <ChevronDown className="w-3.5 h-3.5 text-emerald-500/70" />
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                 ) : (
-                  <ChevronRight className="w-3.5 h-3.5 text-emerald-500/70" />
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
                 )}
               </div>
             </div>
 
             {/* Sub-items under Alerts */}
             {alertsOpen && (
-              <div className="ml-7 pl-3 border-l border-emerald-500/15 space-y-1 mt-1 text-[11px]">
+              <div className="ml-7 pl-3 border-l border-slate-200 space-y-1 mt-1 text-[11px]">
                 <Link
                   href="/ai-intelligence"
-                  className="flex items-center justify-between py-1.5 px-2 rounded-lg text-emerald-200/60 hover:text-white hover:bg-emerald-950/40"
+                  className="flex items-center justify-between py-1.5 px-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 >
                   <span>Active Anomalies</span>
-                  <span className="text-[10px] text-emerald-400 font-mono">6</span>
+                  <span className="text-[10px] text-emerald-600 font-mono font-bold">6</span>
                 </Link>
                 <Link
                   href="/ai-intelligence"
-                  className="flex items-center justify-between py-1.5 px-2 rounded-lg text-emerald-200/60 hover:text-white hover:bg-emerald-950/40"
+                  className="flex items-center justify-between py-1.5 px-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 >
                   <span>Investigating</span>
-                  <span className="text-[10px] text-amber-400 font-mono">4</span>
+                  <span className="text-[10px] text-amber-600 font-mono font-bold">4</span>
                 </Link>
                 <Link
                   href="/ai-intelligence"
-                  className="flex items-center justify-between py-1.5 px-2 rounded-lg text-emerald-200/60 hover:text-white hover:bg-emerald-950/40"
+                  className="flex items-center justify-between py-1.5 px-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 >
                   <span>Resolved</span>
-                  <span className="text-[10px] text-emerald-400 font-mono">2</span>
+                  <span className="text-[10px] text-slate-500 font-mono">2</span>
                 </Link>
               </div>
             )}
@@ -131,11 +131,11 @@ export function Sidebar() {
             href="/buildings"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
               pathname === "/analytics"
-                ? "clay-button-primary text-white shadow-lg"
-                : "text-emerald-100/60 hover:text-white hover:bg-emerald-950/40"
+                ? "clay-button-primary text-white shadow-md"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
             }`}
           >
-            <LineChart className="w-4 h-4 text-emerald-400/70" />
+            <LineChart className="w-4 h-4 text-emerald-600" />
             <span>Analytics</span>
           </Link>
 
@@ -144,11 +144,11 @@ export function Sidebar() {
             href="/actions"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
               pathname === "/actions"
-                ? "clay-button-primary text-white shadow-lg"
-                : "text-emerald-100/60 hover:text-white hover:bg-emerald-950/40"
+                ? "clay-button-primary text-white shadow-md"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
             }`}
           >
-            <CheckSquare className={`w-4 h-4 ${pathname === "/actions" ? "text-white" : "text-emerald-400/70"}`} />
+            <CheckSquare className={`w-4 h-4 ${pathname === "/actions" ? "text-white" : "text-emerald-600"}`} />
             <span>Actions</span>
           </Link>
 
@@ -157,22 +157,22 @@ export function Sidebar() {
             href="/sustainability"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
               pathname === "/sustainability"
-                ? "clay-button-primary text-white shadow-lg"
-                : "text-emerald-100/60 hover:text-white hover:bg-emerald-950/40"
+                ? "clay-button-primary text-white shadow-md"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
             }`}
           >
-            <FileText className={`w-4 h-4 ${pathname === "/sustainability" ? "text-white" : "text-emerald-400/70"}`} />
+            <FileText className={`w-4 h-4 ${pathname === "/sustainability" ? "text-white" : "text-emerald-600"}`} />
             <span>Sustainability</span>
           </Link>
         </nav>
 
         {/* Secondary Navigation Section */}
-        <div className="pt-4 border-t border-emerald-500/10 space-y-1">
+        <div className="pt-4 border-t border-slate-200 space-y-1">
           <Link
             href="/ai-intelligence"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-emerald-100/60 hover:text-white hover:bg-emerald-950/40 transition-all"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all"
           >
-            <Workflow className="w-4 h-4 text-emerald-400/70" />
+            <Workflow className="w-4 h-4 text-emerald-600" />
             <span>AI Automation</span>
           </Link>
 
@@ -180,30 +180,30 @@ export function Sidebar() {
             href="/data-sources"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
               pathname === "/data-sources"
-                ? "clay-button-primary text-white shadow-lg"
-                : "text-emerald-100/60 hover:text-white hover:bg-emerald-950/40"
+                ? "clay-button-primary text-white shadow-md"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
             }`}
           >
-            <Wrench className={`w-4 h-4 ${pathname === "/data-sources" ? "text-white" : "text-emerald-400/70"}`} />
+            <Wrench className={`w-4 h-4 ${pathname === "/data-sources" ? "text-white" : "text-emerald-600"}`} />
             <span>Data Sources</span>
           </Link>
         </div>
       </div>
 
       {/* Bottom Pinned Section */}
-      <div className="p-4 border-t border-emerald-500/10 space-y-3">
+      <div className="p-4 border-t border-slate-200 space-y-3">
         {/* User Profile Card */}
-        <div className="flex items-center justify-between p-2.5 rounded-2xl glass-panel">
+        <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 border border-slate-200">
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-300 flex items-center justify-center text-slate-950 font-bold text-xs shrink-0 shadow-[0_2px_8px_rgba(16,185,129,0.4)]">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm">
               DG
             </div>
             <div className="truncate">
-              <div className="text-xs font-semibold text-white truncate font-display">DIU GreenGrid</div>
-              <div className="text-[10px] text-emerald-400/80 truncate">Ashulia Smart Campus</div>
+              <div className="text-xs font-semibold text-slate-900 truncate font-display">DIU GreenGrid</div>
+              <div className="text-[10px] text-emerald-600 truncate">Ashulia Smart Campus</div>
             </div>
           </div>
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
         </div>
       </div>
     </aside>
