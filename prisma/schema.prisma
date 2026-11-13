@@ -232,3 +232,94 @@ model AuditLog {
   details      String
   timestamp    DateTime @default(now())
 }
+
+// ========================================================
+// PHASE 4: AI ENERGY INTELLIGENCE & PREDICTIVE ANALYTICS
+// ========================================================
+
+// AI Model Execution Metadata & Provenance Audit (Phase 4)
+model AiModelMetadata {
+  id                    String   @id @default(uuid())
+  modelName             String   // e.g. "Campus Diurnal Demand & Solar Forecaster"
+  modelVersion          String   // e.g. "v1.2.0-statistical-hybrid"
+  algorithmType         String   // "SEASONAL_DIURNAL_DECOMPOSITION_EWMA", "CLEAR_SKY_SOLAR_IRRADIANCE", "Z_SCORE_ANOMALY_DETECTOR"
+  category              String   // "HISTORICAL_DATA_BASED", "STATISTICAL_ESTIMATE", "SIMULATED_DEMONSTRATION"
+  dataSufficiencyNotice String   // Explains data sufficiency limitations and methodology transparently
+  confidenceScore       Float    // Statistical confidence score (0.0 to 1.0)
+  lastRunAt             DateTime @default(now())
+  status                String   @default("ACTIVE")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// Energy Demand & Solar Generation Forecast Records (Phase 4)
+model EnergyForecastRecord {
+  id                String   @id @default(uuid())
+  forecastType      String   // "CAMPUS_DEMAND_HOURLY", "CAMPUS_DEMAND_DAILY", "BUILDING_DEMAND_HOURLY", "SOLAR_GENERATION_HOURLY"
+  targetTimestamp   DateTime
+  forecastKwh       Float    // Projected electricity consumption or generation in kWh
+  lowerBoundKwh     Float    // Statistical lower confidence boundary
+  upperBoundKwh     Float    // Statistical upper confidence boundary
+  actualKwh         Float?   // Historical actual value for backtesting accuracy comparison
+  buildingId        String?
+  buildingCode      String?  // e.g. "AB-01", "ALL_CAMPUS"
+  category          String   // "HISTORICAL_DATA_BASED", "STATISTICAL_ESTIMATE", "SIMULATED_DEMONSTRATION"
+  confidencePercent Float    // e.g. 90.0% confidence interval
+  weatherFactorUsed Boolean  @default(false)
+  weatherSource     String   @default("UNAVAILABLE_CLEAR_SKY_ESTIMATE") // Explicit notice when weather API is disconnected
+  modelVersion      String   @default("v1.2.0-statistical-hybrid")
+  createdAt         DateTime @default(now())
+
+  @@index([forecastType, targetTimestamp])
+  @@index([buildingCode, targetTimestamp])
+  @@index([category])
+}
+
+// AI Anomaly Detection Event Log (Phase 4)
+model EnergyAnomaly {
+  id                 String   @id @default(uuid())
+  timestamp          DateTime
+  buildingId         String?
+  buildingCode       String?  // e.g. "AB-01", "CAMPUS_WIDE", "SOLAR_ARRAY"
+  anomalyType        String   // "UNUSUAL_NIGHTTIME_CONSUMPTION", "UNEXPECTED_CONSUMPTION_SPIKE", "ABNORMAL_BUILDING_EUI", "SUDDEN_GENERATION_DROP", "WEEKEND_OFFPEAK_ELEVATION", "METER_DATA_QUALITY_ANOMALY"
+  severity           String   // "LOW", "MEDIUM", "HIGH", "CRITICAL"
+  observedValue      Float    // Actual measured metric (kWh or EUI)
+  expectedBaseline   Float    // Expected normal baseline value
+  deviationPercent   Float    // Percentage deviation from baseline
+  zScore             Float?   // Number of standard deviations away from moving mean
+  supportingEvidence String   // Empirical data points, timestamps, and conditions
+  detectedRootCause  String   // Statistical or operational explanation
+  suggestedAction    String   // Recommended investigation or operational intervention
+  category           String   // "HISTORICAL_DATA_BASED", "STATISTICAL_ESTIMATE", "SIMULATED_DEMONSTRATION"
+  isResolved         Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  @@index([timestamp])
+  @@index([severity])
+  @@index([anomalyType])
+  @@index([buildingCode])
+}
+
+// AI Advisory & Actionable Recommendations (Phase 4)
+model AiRecommendation {
+  id                         String   @id @default(uuid())
+  title                      String
+  detectedIssue              String   // Root issue flagged by AI
+  supportingEvidence         String   // Concrete sensor readings and variance metrics
+  reasoning                  String   // Engineering/energy reasoning behind the recommendation
+  suggestedAction            String   // Concrete operational steps
+  priority                   String   // "LOW", "MEDIUM", "HIGH", "CRITICAL"
+  estimatedKwhSavingsWeekly  Float    // Estimated technical kWh savings (STRICTLY NON-FINANCIAL)
+  outcomeDescription         String   // Explicitly labeled as an estimate
+  category                   String   // "HISTORICAL_DATA_BASED", "STATISTICAL_ESTIMATE", "SIMULATED_DEMONSTRATION"
+  targetBuildingId           String?
+  targetBuildingCode         String?
+  status                     String   @default("OPEN") // "OPEN", "CONVERTED_TO_ACTION", "DISMISSED"
+  linkedActionId             String?  // Linked to ActionImprovement record when dispatched
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+
+  @@index([priority])
+  @@index([status])
+  @@index([category])
+}

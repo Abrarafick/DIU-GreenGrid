@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Building2,
+  BrainCircuit,
   Leaf,
   CheckSquare,
   Database,
@@ -28,6 +29,12 @@ export function Sidebar() {
       href: "/buildings",
       icon: Building2,
       description: "Floor area, baselines & EUI",
+    },
+    {
+      name: "AI Intelligence",
+      href: "/ai-intelligence",
+      icon: BrainCircuit,
+      description: "Forecasting, solar AI & anomalies",
     },
     {
       name: "Sustainability & SDGs",
