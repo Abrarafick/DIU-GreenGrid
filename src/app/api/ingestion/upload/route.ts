@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import { parseIngestionBuffer } from "@/lib/ingestion/parser";
+
+const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 Megabytes
 
 export async function POST(request: Request) {
   try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    }
+    const session = await requireAuth(["ADMIN", "FACILITY_MANAGER"]);
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
@@ -21,9 +20,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No file provided for upload" }, { status: 400 });
     }
 
-    const filename = file.name;
-    const isCsv = filename.toLowerCase().endsWith(".csv");
-    const isExcel = filename.toLowerCase().endsWith(".xlsx") || filename.toLowerCase().endsWith(".xls");
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: "File exceeds maximum permitted upload limit of 15 MB." },
+        { status: 413 }
+      );
+    }
+
+    // Sanitize filename to prevent directory traversal in logs
+    const sanitizedFilename = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const isCsv = sanitizedFilename.toLowerCase().endsWith(".csv");
+    const isExcel = sanitizedFilename.toLowerCase().endsWith(".xlsx") || sanitizedFilename.toLowerCase().endsWith(".xls");
 
     if (!isCsv && !isExcel) {
       return NextResponse.json(
@@ -49,7 +56,7 @@ export async function POST(request: Request) {
           ingestionMethod: isSimulatedForm ? "DEMO_SIMULATION" : "CSV_EXCEL_IMPORT",
           isSimulated: isSimulatedForm,
           confidenceRating: isSimulatedForm ? 0.0 : 0.95,
-          sourceDetails: `Uploaded file: ${filename}`,
+          sourceDetails: `Uploaded file: ${sanitizedFilename}`,
           description: "Batch import through the DIU GreenGrid ingestion portal.",
         },
       });
@@ -70,7 +77,7 @@ export async function POST(request: Request) {
     // 3. Create Ingestion Batch Record
     const batch = await db.ingestionBatch.create({
       data: {
-        filename,
+        filename: sanitizedFilename,
         fileType: isCsv ? "CSV" : "EXCEL",
         sourceType: isSimulatedForm ? "DEMO_SIMULATION" : "CSV_EXCEL_IMPORT",
         isSimulated: isSimulatedForm,
@@ -106,8 +113,8 @@ export async function POST(request: Request) {
           powerFactor: row.powerFactor,
           carbonKgEmitted: row.carbonKgEmitted,
           carbonKgAvoided: row.carbonKgAvoided,
+          netCarbonKg: Math.max(0, Number((row.carbonKgEmitted - row.carbonKgAvoided).toFixed(2))),
           notes: row.notes,
-          rawPayload: row.rawPayload,
         })),
       });
     }
@@ -115,9 +122,9 @@ export async function POST(request: Request) {
     // 5. Audit Log
     await db.auditLog.create({
       data: {
-        action: "BATCH_IMPORT_COMPLETED",
+        action: "BATCH_DATA_IMPORTED",
         performedBy: session.email,
-        details: `Imported ${filename}: ${parseResult.acceptedRows.length} accepted, ${parseResult.duplicateRows} duplicates skipped, ${parseResult.rejectedRows} rejected.`,
+        details: `Imported ${sanitizedFilename}: ${parseResult.acceptedRows.length} accepted, ${parseResult.duplicateRows} duplicates skipped, ${parseResult.rejectedRows} rejected.`,
       },
     });
 
@@ -129,10 +136,16 @@ export async function POST(request: Request) {
         acceptedRows: parseResult.acceptedRows.length,
         duplicateRows: parseResult.duplicateRows,
         rejectedRows: parseResult.rejectedRows,
-        errors: parseResult.errors.slice(0, 50), // return top 50 errors if any
+        errors: parseResult.errors.slice(0, 50),
       },
     });
   } catch (error: any) {
+    if (error.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+    if (error.message === "FORBIDDEN") {
+      return NextResponse.json({ error: "Forbidden: Auditor / Viewer role cannot upload data" }, { status: 403 });
+    }
     console.error("Upload error:", error);
     return NextResponse.json(
       { error: error.message || "Failed to process file upload" },

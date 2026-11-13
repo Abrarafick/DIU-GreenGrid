@@ -1,0 +1,342 @@
+// Prisma Schema for DIU GreenGrid — Production PostgreSQL Configuration
+// Software-First Smart Campus Energy & Sustainability Monitoring System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User & Role-Based Access Control
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         String   @default("AUDITOR_VIEWER") // "ADMIN", "FACILITY_MANAGER", "AUDITOR_VIEWER"
+  department   String   @default("Campus Facilities")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Campus Building Entity
+model Building {
+  id                  String   @id @default(uuid())
+  code                String   @unique // e.g. "AB-01", "AB-02", "YK-SG", "LIB", "ADMIN"
+  name                String   // e.g. "Academic Building 01", "Yunus Khan Scholar Garden"
+  totalFloorAreaSqM   Float    // Gross Floor Area (GFA) in square meters
+  occupancyCapacity   Int
+  primaryFunction     String   // "ACADEMIC", "RESIDENTIAL", "LIBRARY", "ADMINISTRATION"
+  baselineDailyKwh    Float    // Expected daily baseline consumption in kWh
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  metrics             EnergyMetric[]
+  actions             ActionImprovement[]
+}
+
+// Campus Energy Generation / Supply Source Entity
+model EnergySource {
+  id                 String   @id @default(uuid())
+  code               String   @unique // "GRID_SUPPLY", "SOLAR_ROOFTOP", "CAMPUS_GENSET", "BIOGAS_PILOT"
+  name               String   // "Configured National Grid Incomer", "Rooftop Solar PV Arrays", "Emergency Diesel Generator", "Biogas Pilot Plant"
+  sourceType         String   // "GRID", "SOLAR", "GENERATOR", "BIOGAS"
+  ratedCapacityKw    Float    // Maximum peak capacity rating in kW
+  isRenewable        Boolean  @default(false)
+  configuredProvider String   // Configurable utility/operator
+  monitoringMethod   String   // "DIGITAL_SUBMETER", "INVERTER_PORTAL_EXPORT", "TECHNICAL_FUEL_LOGBOOK", "UNVERIFIED_PENDING_METERING"
+  operationalStatus  String   @default("OPERATIONAL") // "OPERATIONAL", "UNVERIFIED_PILOT", "UNAVAILABLE"
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  metrics            EnergyMetric[]
+  apiAdapters        ApiAdapterConfig[]
+}
+
+// Data Provenance & Lineage Tracker
+model DataSourceProvenance {
+  id                  String   @id @default(uuid())
+  code                String   @unique // e.g. "SUBMETER_CSV_IMPORT", "DEMO_SIMULATION_ENGINE"
+  name                String
+  ingestionMethod     String   // "API_SYNC", "CSV_EXCEL_IMPORT", "MANUAL_ENTRY", "DEMO_SIMULATION"
+  isSimulated         Boolean  @default(false)
+  confidenceRating    Float    @default(1.0) // 0.0 (simulated) to 1.0 (verified meter telemetry)
+  sourceDetails       String?  // File name, endpoint URL, or sensor ID
+  description         String?
+  createdAt           DateTime @default(now())
+
+  metrics             EnergyMetric[]
+  batches             IngestionBatch[]
+}
+
+// Ingestion Batch Audit
+model IngestionBatch {
+  id                    String   @id @default(uuid())
+  filename              String
+  fileType              String   // "CSV", "EXCEL"
+  sourceType            String   // "REAL_API", "CSV_EXCEL_IMPORT", "MANUAL_ENTRY", "DEMO_SIMULATION"
+  isSimulated           Boolean  @default(false)
+  totalRows             Int
+  successfulRows        Int
+  rejectedRows          Int
+  duplicateRows         Int
+  validationErrorsJson  String?  // JSON string containing detailed validation error records
+  summaryNotes          String?
+  importedBy            String   // User email or "SYSTEM"
+  createdAt             DateTime @default(now())
+
+  provenanceId          String?
+  provenance            DataSourceProvenance? @relation(fields: [provenanceId], references: [id], onDelete: SetNull)
+
+  metrics               EnergyMetric[]
+
+  @@index([createdAt])
+  @@index([sourceType])
+}
+
+// Configurable External System API Adapters
+model ApiAdapterConfig {
+  id                    String   @id @default(uuid())
+  name                  String
+  adapterType           String
+  baseUrl               String
+  authType              String   @default("NONE")
+  authKeyMasked         String?
+  pollingIntervalMins   Int      @default(60)
+  status                String   @default("CONFIGURED_IDLE")
+  lastSyncAt            DateTime?
+  lastSyncStatus        String?
+  lastSyncMessage       String?
+  isSimulatedFallback   Boolean  @default(true)
+  isEnabled             Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  targetEnergySourceId  String?
+  targetEnergySource    EnergySource? @relation(fields: [targetEnergySourceId], references: [id], onDelete: SetNull)
+}
+
+// Energy Telemetry & Consumption Record
+model EnergyMetric {
+  id                    String   @id @default(uuid())
+  timestamp             DateTime
+  
+  buildingId            String?
+  building              Building? @relation(fields: [buildingId], references: [id], onDelete: SetNull)
+  
+  energySourceId        String?
+  energySource          EnergySource? @relation(fields: [energySourceId], references: [id], onDelete: SetNull)
+  
+  provenanceId          String
+  provenance            DataSourceProvenance @relation(fields: [provenanceId], references: [id], onDelete: Restrict)
+
+  batchId               String?
+  batch                 IngestionBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  
+  isSimulated           Boolean  @default(false)
+
+  kwhConsumed           Float    @default(0.0)
+  peakDemandKw          Float?
+  powerFactor           Float?
+
+  solarKwhGenerated     Float    @default(0.0)
+
+  dieselLitres          Float    @default(0.0)
+  generatorRuntimeHours Float    @default(0.0)
+  generatorKwhGenerated Float?   @default(0.0)
+
+  biogasM3Consumed      Float    @default(0.0)
+  biogasKwhGenerated    Float    @default(0.0)
+
+  carbonKgEmitted       Float    @default(0.0)
+  carbonKgAvoided       Float    @default(0.0)
+  netCarbonKg           Float    @default(0.0)
+
+  notes                 String?
+  createdAt             DateTime @default(now())
+
+  @@index([timestamp])
+  @@index([buildingId, timestamp])
+  @@index([energySourceId, timestamp])
+  @@index([isSimulated])
+  @@index([provenanceId])
+}
+
+// Configurable Emission Factor Parameters
+model EmissionFactorConfig {
+  id                  String   @id @default(uuid())
+  factorKey           String   @unique
+  factorName          String
+  value               Float
+  unit                String
+  sourceDocumentation String
+  assumptions         String
+  methodology         String?
+  isAuthoritative     Boolean  @default(false)
+  updatedBy           String   @default("SYSTEM")
+  updatedAt           DateTime @updatedAt
+  createdAt           DateTime @default(now())
+}
+
+// Action & Improvement Management
+model ActionImprovement {
+  id                      String   @id @default(uuid())
+  title                   String
+  detectedIssue           String
+  recommendedAction       String
+  assignedTeam            String
+  assignedPersonnel       String?
+  deadline                DateTime?
+  completionStatus        String   @default("IDENTIFIED") // "IDENTIFIED", "IN_PROGRESS", "COMPLETED", "VERIFIED", "CANCELLED"
+  priority                String   @default("MEDIUM") // "LOW", "MEDIUM", "HIGH", "CRITICAL"
+  
+  targetBuildingId        String?
+  targetBuilding          Building? @relation(fields: [targetBuildingId], references: [id], onDelete: SetNull)
+  
+  beforeKwh               Float?
+  afterKwh                Float?
+  verifiedKwhSavings      Float?
+  measurementPeriodDays   Int?     @default(30)
+  verificationMethod      String?
+  verifiedCarbonSavingsKg Float?
+  verifiedBy              String?
+  verifiedAt              DateTime?
+  supportingEvidence      String?
+  completionNotes         String?
+  sdgAlignment            String?  @default("SDG_7") // "SDG_7", "SDG_9", "SDG_12", "SDG_13"
+  
+  reportedAt              DateTime @default(now())
+  completedAt             DateTime?
+  notes                   String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([completionStatus])
+  @@index([priority])
+  @@index([sdgAlignment])
+}
+
+// Sustainability & SDG Target Tracking
+model SustainabilityTarget {
+  id                    String   @id @default(uuid())
+  title                 String
+  sdgCategory           String
+  targetPeriod          String
+  baselineValue         Float
+  targetValue           Float
+  currentValue          Float
+  unit                  String
+  status                String   @default("ON_TRACK")
+  calculationMethod     String
+  remainingGap          Float
+  targetYear            Int      @default(2026)
+  responsibleUnit       String
+  notes                 String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([sdgCategory])
+  @@index([status])
+}
+
+// Security & Data Lineage Audit Log
+model AuditLog {
+  id           String   @id @default(uuid())
+  action       String
+  performedBy  String
+  details      String
+  timestamp    DateTime @default(now())
+}
+
+// AI Model Execution Metadata & Provenance Audit
+model AiModelMetadata {
+  id                    String   @id @default(uuid())
+  modelName             String
+  modelVersion          String
+  algorithmType         String
+  category              String
+  dataSufficiencyNotice String
+  confidenceScore       Float
+  lastRunAt             DateTime @default(now())
+  status                String   @default("ACTIVE")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// Energy Demand & Solar Generation Forecast Records
+model EnergyForecastRecord {
+  id                String   @id @default(uuid())
+  forecastType      String
+  targetTimestamp   DateTime
+  forecastKwh       Float
+  lowerBoundKwh     Float
+  upperBoundKwh     Float
+  actualKwh         Float?
+  buildingId        String?
+  buildingCode      String?
+  category          String
+  confidencePercent Float
+  weatherFactorUsed Boolean  @default(false)
+  weatherSource     String   @default("UNAVAILABLE_CLEAR_SKY_ESTIMATE")
+  modelVersion      String   @default("v1.2.0-statistical-hybrid")
+  createdAt         DateTime @default(now())
+
+  @@index([forecastType, targetTimestamp])
+  @@index([buildingCode, targetTimestamp])
+  @@index([category])
+}
+
+// AI Anomaly Detection Event Log
+model EnergyAnomaly {
+  id                 String   @id @default(uuid())
+  timestamp          DateTime
+  buildingId         String?
+  buildingCode       String?
+  anomalyType        String
+  severity           String
+  observedValue      Float
+  expectedBaseline   Float
+  deviationPercent   Float
+  zScore             Float?
+  supportingEvidence String
+  detectedRootCause  String
+  suggestedAction    String
+  category           String
+  isResolved         Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  @@index([timestamp])
+  @@index([severity])
+  @@index([anomalyType])
+  @@index([buildingCode])
+}
+
+// AI Advisory & Actionable Recommendations
+model AiRecommendation {
+  id                         String   @id @default(uuid())
+  title                      String
+  detectedIssue              String
+  supportingEvidence         String
+  reasoning                  String
+  suggestedAction            String
+  priority                   String
+  estimatedKwhSavingsWeekly  Float
+  outcomeDescription         String
+  category                   String
+  targetBuildingId           String?
+  targetBuildingCode         String?
+  status                     String   @default("OPEN")
+  linkedActionId             String?
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+
+  @@index([priority])
+  @@index([status])
+  @@index([category])
+}
