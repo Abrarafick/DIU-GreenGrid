@@ -1,6 +1,6 @@
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { CentralEnergyDashboard } from "@/components/analytics/CentralEnergyDashboard";
+import { VolteraOverviewDashboard } from "@/components/dashboard/VolteraOverviewDashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -356,11 +356,11 @@ export default async function OverviewPage() {
   };
 
   return (
-    <CentralEnergyDashboard
-      initialData={initialData}
-      user={session}
+    <VolteraOverviewDashboard
+      summary={initialData.summary}
       buildings={buildings}
       energySources={energySources}
+      user={session}
     />
   );
 }

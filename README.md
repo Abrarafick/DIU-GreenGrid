@@ -203,9 +203,9 @@ The platform includes three pre-configured accounts mapped to DIU operational ro
 
 | Role | Email Address | Password | Permissions |
 | :--- | :--- | :--- | :--- |
-| **Administrator** | `admin@diu.edu.bd` | `DiuFacilities#2026` | Full administrative control, user management, targets, audit logs |
-| **Facility Manager** | `facility@diu.edu.bd` | `DiuFacilities#2026` | Telemetry ingestion, manual entry, action dispatch, savings audit |
-| **Auditor / Viewer** | `auditor@diu.edu.bd` | `DiuFacilities#2026` | Read-only access to analytics, SDGs, and formal reports |
+| **Administrator** | `admin@diu.edu.bd` | `Admin@GreenGrid2026!` | Full administrative control, user management, targets, audit logs |
+| **Facility Manager** | `facility@diu.edu.bd` | `Facility@2026!` | Telemetry ingestion, manual entry, action dispatch, savings audit |
+| **Auditor / Viewer** | `auditor@diu.edu.bd` | `Auditor@2026!` | Read-only access to analytics, SDGs, and formal reports |
 
 > *Note: These credentials are strictly intended for local demonstration and evaluation. In production environments, credentials must be generated dynamically with distinct passwords and multi-factor authentication.*
 
