@@ -82,93 +82,95 @@ export default async function BuildingsPage() {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       <div>
-        <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-          <Building2 className="w-5 h-5 text-cyan-400" />
+        <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2 font-display">
+          <Building2 className="w-5 h-5 text-emerald-400" />
           Campus Facilities & Building-wise Consumption Analytics
         </h2>
-        <p className="text-xs text-slate-400 mt-0.5">
+        <p className="text-xs text-emerald-200/60 mt-0.5">
           Comparative electricity demand, facility energy rankings, daytime peak vs. off-peak baseload segregation, and Energy Use Intensity (EUI).
         </p>
       </div>
 
       {/* Building Rankings Bar Chart */}
-      <BuildingRankingsBarChart rankings={buildingRankings} />
+      <div className="glass-panel rounded-3xl p-6">
+        <BuildingRankingsBarChart rankings={buildingRankings} />
+      </div>
 
       {/* Comprehensive Building Profiles Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {buildingRankings.map((b, idx) => (
           <div
             key={b.id}
-            className={`p-5 rounded-2xl border space-y-4 transition-all ${
+            className={`p-5 rounded-3xl transition-all ${
               b.code === "FabLab"
-                ? "bg-slate-900/95 border-[#ff5500]/50 shadow-lg shadow-[#ff5500]/15 ring-1 ring-[#ff5500]/30"
+                ? "glass-panel-glow border-emerald-400/40 shadow-[0_4px_25px_rgba(52,211,153,0.25)] ring-1 ring-[#6ee7b7]/40"
                 : b.isHighConsumer
-                ? "bg-slate-900/95 border-cyan-500/40 shadow-lg shadow-cyan-950/20"
-                : "bg-slate-900/80 border-slate-800"
+                ? "glass-panel border-emerald-500/30 shadow-lg shadow-emerald-950/20"
+                : "glass-panel"
             }`}
           >
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center justify-between border-b border-emerald-500/15 pb-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className={`font-mono text-xs font-bold ${b.code === "FabLab" ? "text-[#ff5500]" : "text-emerald-400"}`}>
+                  <span className={`font-mono text-xs font-bold ${b.code === "FabLab" ? "text-[#6ee7b7]" : "text-emerald-400"}`}>
                     {b.code}
                   </span>
                   {b.code === "FabLab" ? (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#ff5500]/20 text-[#ff5500] border border-[#ff5500]/40 font-bold uppercase">
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-[#6ee7b7] border border-emerald-500/40 font-bold uppercase clay-badge">
                       Prototyping Maker Lab
                     </span>
                   ) : b.isHighConsumer ? (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold uppercase">
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-bold uppercase clay-badge">
                       High Load #{idx + 1}
                     </span>
                   ) : null}
                 </div>
-                <h3 className="text-sm font-bold text-white mt-0.5">{b.name}</h3>
+                <h3 className="text-sm font-bold text-white mt-1 font-display">{b.name}</h3>
               </div>
-              <span className={`text-[10px] px-2 py-0.5 rounded border ${
+              <span className={`text-[10px] px-2.5 py-1 rounded-full border clay-badge ${
                 b.code === "FabLab"
-                  ? "bg-[#ff5500]/10 text-[#ff5500] border-[#ff5500]/30 font-medium"
-                  : "bg-slate-800 text-slate-300 border-slate-700"
+                  ? "bg-emerald-500/15 text-[#6ee7b7] border-emerald-500/30 font-medium"
+                  : "bg-emerald-950/60 text-emerald-200/80 border-emerald-500/20"
               }`}>
                 {b.primaryFunction.split("&")[0]}
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80">
-                <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                  <Layers className="w-3 h-3 text-cyan-400" /> Floor Area
+            <div className="grid grid-cols-2 gap-2 text-xs pt-2">
+              <div className="bg-[#0b1c15]/70 p-3 rounded-2xl border border-emerald-500/15">
+                <span className="text-[10px] text-emerald-300/70 flex items-center gap-1 font-medium">
+                  <Layers className="w-3 h-3 text-emerald-400" /> Floor Area
                 </span>
-                <span className="text-sm font-bold text-slate-200 mt-1 block">
+                <span className="text-sm font-bold text-white mt-1 block font-mono">
                   {b.totalFloorAreaSqM.toLocaleString()} m²
                 </span>
               </div>
-              <div className="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80">
-                <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                  <Users className="w-3 h-3 text-blue-400" /> Occupancy
+              <div className="bg-[#0b1c15]/70 p-3 rounded-2xl border border-emerald-500/15">
+                <span className="text-[10px] text-emerald-300/70 flex items-center gap-1 font-medium">
+                  <Users className="w-3 h-3 text-teal-400" /> Occupancy
                 </span>
-                <span className="text-sm font-bold text-slate-200 mt-1 block">
+                <span className="text-sm font-bold text-white mt-1 block font-mono">
                   {b.occupancyCapacity.toLocaleString()} persons
                 </span>
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-2 text-xs font-mono">
-              <div className="flex justify-between text-slate-300">
-                <span className="text-slate-400 font-sans">Recorded Total:</span>
+            <div className="p-3.5 rounded-2xl bg-[#081510]/90 border border-emerald-500/15 space-y-2 text-xs font-mono">
+              <div className="flex justify-between text-emerald-100/80">
+                <span className="text-emerald-300/60 font-sans">Recorded Total:</span>
                 <span className="font-bold text-white">{b.totalConsumptionKwh.toLocaleString()} kWh</span>
               </div>
-              <div className="flex justify-between text-slate-300">
-                <span className="text-slate-400 font-sans">Campus Share:</span>
-                <span className="text-emerald-400 font-bold">{b.percentageOfTotal}%</span>
+              <div className="flex justify-between text-emerald-100/80">
+                <span className="text-emerald-300/60 font-sans">Campus Share:</span>
+                <span className="text-[#6ee7b7] font-bold">{b.percentageOfTotal}%</span>
               </div>
-              <div className="flex justify-between text-slate-300">
-                <span className="text-slate-400 font-sans">Energy Intensity (EUI):</span>
-                <span className="text-cyan-400 font-bold">{b.euiKwhPerSqm} kWh/m²</span>
+              <div className="flex justify-between text-emerald-100/80">
+                <span className="text-emerald-300/60 font-sans">Energy Intensity (EUI):</span>
+                <span className="text-emerald-300 font-bold">{b.euiKwhPerSqm} kWh/m²</span>
               </div>
-              <div className="flex justify-between text-slate-400 text-[11px] pt-1 border-t border-slate-800">
+              <div className="flex justify-between text-emerald-400/60 text-[11px] pt-1.5 border-t border-emerald-500/15">
                 <span className="font-sans">Peak Share (08-17h):</span>
-                <span>{b.peakFractionPercent}%</span>
+                <span className="font-semibold text-emerald-300">{b.peakFractionPercent}%</span>
               </div>
             </div>
           </div>

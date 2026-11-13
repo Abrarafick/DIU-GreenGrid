@@ -19,7 +19,7 @@ export default async function DashboardLayout({
   const isSimulated = simulatedCount > 0;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0a0b0f] text-slate-100">
+    <div className="min-h-screen flex flex-col bg-[#06100b] text-emerald-50 selection:bg-emerald-500/30 selection:text-emerald-200">
       {/* Prominent Data Provenance Banner */}
       <DataSourceBanner
         isSimulated={isSimulated}
@@ -37,7 +37,7 @@ export default async function DashboardLayout({
       {/* Body with Sidebar and Main Content */}
       <div className="flex-1 flex overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-y-auto bg-[#0a0b0f]">
+        <main className="flex-1 overflow-y-auto bg-[#06100b] bg-[radial-gradient(ellipse_90%_60%_at_50%_0%,rgba(16,185,129,0.06),rgba(6,16,11,0))]">
           {children}
         </main>
       </div>

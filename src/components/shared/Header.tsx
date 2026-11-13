@@ -50,20 +50,20 @@ export function Header({ user, onRefresh }: HeaderProps) {
   };
 
   return (
-    <header className="bg-[#0a0b0f] border-b border-white/5 px-6 py-2.5 flex items-center justify-between sticky top-0 z-40 backdrop-blur-md">
+    <header className="bg-[#07140e]/80 border-b border-emerald-500/15 px-6 py-2.5 flex items-center justify-between sticky top-0 z-40 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
       {/* Brand & Subtitle */}
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-[#ff5500] flex items-center justify-center text-white shadow-[0_0_12px_rgba(255,85,0,0.4)]">
+        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white shadow-[0_0_16px_rgba(16,185,129,0.45),inset_0_1px_1px_rgba(255,255,255,0.4)]">
           <Zap className="w-4 h-4 fill-white" />
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-sm font-bold text-white tracking-tight">DIU GreenGrid</h1>
-            <span className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-[#181a24] text-neutral-300 border border-white/5">
-              Software-First
+            <h1 className="text-sm font-bold text-white tracking-tight font-display">DIU GreenGrid</h1>
+            <span className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-emerald-950/60 text-emerald-300 border border-emerald-500/25 clay-badge">
+              Eco-Tech
             </span>
           </div>
-          <p className="text-[11px] text-neutral-400">
+          <p className="text-[11px] text-emerald-100/60">
             Daffodil International University • Ashulia Smart Campus Energy Intelligence
           </p>
         </div>
@@ -72,17 +72,17 @@ export function Header({ user, onRefresh }: HeaderProps) {
       {/* Right: Quick Role Switcher & User Profile */}
       <div className="flex items-center gap-4">
         {/* Quick RBAC Switcher for Evaluation */}
-        <div className="hidden lg:flex items-center gap-1.5 bg-[#141620] p-1 rounded-full border border-white/5 text-xs">
-          <span className="text-[11px] text-neutral-400 px-2 flex items-center gap-1">
-            <Shield className="w-3 h-3 text-[#ff5500]" /> Role:
+        <div className="hidden lg:flex items-center gap-1.5 clay-pill p-1 text-xs">
+          <span className="text-[11px] text-emerald-300/70 px-2 flex items-center gap-1">
+            <Shield className="w-3 h-3 text-emerald-400" /> Role:
           </span>
           <button
             onClick={() => handleQuickSwitch("admin@diu.edu.bd")}
             disabled={switching || user?.role === "ADMIN"}
-            className={`px-2.5 py-1 rounded-full text-xs transition-colors ${
+            className={`px-2.5 py-1 rounded-full text-xs transition-all ${
               user?.role === "ADMIN"
-                ? "bg-rose-500/20 text-rose-300 font-semibold border border-rose-500/30"
-                : "text-neutral-400 hover:text-white hover:bg-white/5"
+                ? "clay-button-primary text-white font-semibold text-[11px]"
+                : "text-emerald-300/60 hover:text-white hover:bg-emerald-900/30"
             }`}
           >
             Admin
@@ -90,10 +90,10 @@ export function Header({ user, onRefresh }: HeaderProps) {
           <button
             onClick={() => handleQuickSwitch("facility@diu.edu.bd")}
             disabled={switching || user?.role === "FACILITY_MANAGER"}
-            className={`px-2.5 py-1 rounded-full text-xs transition-colors ${
+            className={`px-2.5 py-1 rounded-full text-xs transition-all ${
               user?.role === "FACILITY_MANAGER"
-                ? "bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30"
-                : "text-neutral-400 hover:text-white hover:bg-white/5"
+                ? "clay-button-primary text-white font-semibold text-[11px]"
+                : "text-emerald-300/60 hover:text-white hover:bg-emerald-900/30"
             }`}
           >
             Facility Mgr
@@ -101,10 +101,10 @@ export function Header({ user, onRefresh }: HeaderProps) {
           <button
             onClick={() => handleQuickSwitch("auditor@diu.edu.bd")}
             disabled={switching || user?.role === "AUDITOR_VIEWER"}
-            className={`px-2.5 py-1 rounded-full text-xs transition-colors ${
+            className={`px-2.5 py-1 rounded-full text-xs transition-all ${
               user?.role === "AUDITOR_VIEWER"
-                ? "bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/30"
-                : "text-neutral-400 hover:text-white hover:bg-white/5"
+                ? "clay-button-primary text-white font-semibold text-[11px]"
+                : "text-emerald-300/60 hover:text-white hover:bg-emerald-900/30"
             }`}
           >
             Auditor
