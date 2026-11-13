@@ -117,8 +117,8 @@ async function runPhase1Checks() {
 
     // 9. Test Action & Improvement Tracking
     const actions = await prisma.actionImprovement.findMany();
-    assert(actions.length === 3, "3 Initial energy improvement actions tracked");
-    const verifiedAction = actions.find((a) => a.completionStatus === "COMPLETED_VERIFIED");
+    assert(actions.length >= 3, "Initial energy improvement actions tracked (>= 3)");
+    const verifiedAction = actions.find((a) => a.completionStatus === "COMPLETED_VERIFIED" || a.completionStatus === "VERIFIED");
     assert(
       verifiedAction && verifiedAction.verifiedKwhSavings > 0,
       `Action tracks verified energy reduction: ${verifiedAction?.verifiedKwhSavings} kWh`

@@ -8,6 +8,11 @@ async function main() {
 
   // 1. Clean existing records
   await prisma.auditLog.deleteMany({});
+  await prisma.aiRecommendation.deleteMany({});
+  await prisma.energyAnomaly.deleteMany({});
+  await prisma.energyForecastRecord.deleteMany({});
+  await prisma.aiModelMetadata.deleteMany({});
+  await prisma.sustainabilityTarget.deleteMany({});
   await prisma.actionImprovement.deleteMany({});
   await prisma.energyMetric.deleteMany({});
   await prisma.ingestionBatch.deleteMany({});
@@ -418,13 +423,21 @@ async function main() {
       detectedIssue: "Automated baseline monitoring detected recurring 22 kW idle load between 22:00 and 06:00 caused by unmanaged desktop PC sleep states and auxiliary AC units.",
       recommendedAction: "Institute automated group-policy PC sleep timer after 21:00 and mechanical lockouts on auxiliary split AC units.",
       assignedTeam: "IT Infrastructure Support & Electrical Maintenance",
-      completionStatus: "COMPLETED_VERIFIED",
+      assignedPersonnel: "Engr. Rafiqul Islam (Lead Electrical)",
+      completionStatus: "VERIFIED",
       priority: "HIGH",
       targetBuildingId: buildings.find((b) => b.code === "AB-02")?.id,
       beforeKwh: 1450.0,
       afterKwh: 620.0,
       verifiedKwhSavings: 830.0,
+      measurementPeriodDays: 30,
       verificationMethod: "30-day comparative sub-meter logging",
+      verifiedCarbonSavingsKg: Number((830.0 * 0.637).toFixed(2)), // 528.71 kg CO2e
+      verifiedBy: "admin@diu.edu.bd",
+      verifiedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      supportingEvidence: "Floor 3 sub-meter logbook export (Ref: MTR-AB02-L3-OCT26) showing reduction from 22 kW to 8 kW off-peak baseload.",
+      completionNotes: "Group policy active across 140 workstations. Breakers relabeled. Verified by Campus Facility Manager. 830 kWh/day permanent reduction achieved.",
+      sdgAlignment: "SDG_12",
       notes: "Verified by Campus Facility Manager. 830 kWh/day permanent reduction achieved.",
     },
     {
@@ -432,13 +445,21 @@ async function main() {
       detectedIssue: "Dual 15 kW overhead water transfer pumps running concurrently during campus peak grid hours (11:00 - 13:00).",
       recommendedAction: "Reschedule primary pump cycle to morning solar-generation window (09:30 - 11:30) and secondary cycle to off-peak night (02:00).",
       assignedTeam: "Campus Facilities & Plumbing Unit",
-      completionStatus: "COMPLETED_VERIFIED",
+      assignedPersonnel: "Md. Tariqul Anam (Water Systems Tech)",
+      completionStatus: "VERIFIED",
       priority: "MEDIUM",
       targetBuildingId: buildings.find((b) => b.code === "YK-SG")?.id,
       beforeKwh: 3200.0,
       afterKwh: 2750.0,
       verifiedKwhSavings: 450.0,
+      measurementPeriodDays: 30,
       verificationMethod: "Dedicated sub-meter interval logging",
+      verifiedCarbonSavingsKg: Number((450.0 * 0.637).toFixed(2)), // 286.65 kg CO2e
+      verifiedBy: "facility@diu.edu.bd",
+      verifiedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+      supportingEvidence: "Sub-meter interval log demonstrating zero water pump draw during peak tariff grid window.",
+      completionNotes: "Pumps aligned with rooftop solar generation curve. Automatic timer relays installed.",
+      sdgAlignment: "SDG_7",
       notes: "Pumps aligned with rooftop solar generation curve.",
     },
     {
@@ -446,33 +467,160 @@ async function main() {
       detectedIssue: "All perimeter and core lighting zones kept energized at 100% capacity despite abundant natural daylight from floor-to-ceiling perimeter windows.",
       recommendedAction: "Rewire perimeter fixtures into independent daylight-zone circuits and train floor stewards on daylight utilization.",
       assignedTeam: "Electrical Maintenance Unit",
+      assignedPersonnel: "Engr. Mahmudul Hasan",
       completionStatus: "IN_PROGRESS",
       priority: "MEDIUM",
       targetBuildingId: buildings.find((b) => b.code === "LIB-AUD")?.id,
       beforeKwh: 890.0,
       afterKwh: null,
       verifiedKwhSavings: null,
+      measurementPeriodDays: 30,
       verificationMethod: "Pre-retrofit 14-day baseline established",
+      supportingEvidence: "Floor plan lux study showing >450 lux natural daylighting across 12 meters of perimeter desks.",
+      completionNotes: "Electrical contractor working on breaker sub-panel separation. Zone 1 and 2 rewired.",
+      sdgAlignment: "SDG_12",
       notes: "Electrical contractor working on breaker sub-panel separation.",
+    },
+    {
+      title: "Administrative Block Central Chiller Water Loop Temperature Reset",
+      detectedIssue: "Chilled water supply temperature held at 6.0°C during moderate autumn ambient conditions (26°C outdoor dry bulb).",
+      recommendedAction: "Implement ambient-reset schedule to raise chilled water temperature to 8.5°C during moderate ambient conditions.",
+      assignedTeam: "HVAC Operations",
+      assignedPersonnel: "Kazi Nazmul (Chiller Plant Specialist)",
+      completionStatus: "COMPLETED",
+      priority: "HIGH",
+      targetBuildingId: buildings.find((b) => b.code === "ADMIN")?.id,
+      beforeKwh: 1120.0,
+      afterKwh: 880.0,
+      verifiedKwhSavings: 240.0,
+      measurementPeriodDays: 14,
+      verificationMethod: "Chiller plant energy transducer 14-day comparison",
+      verifiedCarbonSavingsKg: Number((240.0 * 0.637).toFixed(2)),
+      supportingEvidence: "BMS trend log showing chilled water setpoint reset to 8.5°C with zero occupant comfort complaints.",
+      completionNotes: "Reset schedule validated. Pending 30-day final verification sign-off by Chief Engineer.",
+      sdgAlignment: "SDG_13",
+      notes: "Thermodynamic lift reduction saves compressor electrical load.",
+    },
+    {
+      title: "Academic Building 01 Rooftop Solar Array String Diagnostic & Soiling Wash",
+      detectedIssue: "String Inverter #4 DC current output lagging adjacent inverter strings by 22% due to dust accumulation from nearby construction.",
+      recommendedAction: "Perform module surface washing with deionized water and check string MC4 connector contact resistance.",
+      assignedTeam: "Solar Inverter Maintenance Unit",
+      assignedPersonnel: "Md. Al-Amin (Solar Specialist)",
+      completionStatus: "IDENTIFIED",
+      priority: "HIGH",
+      targetBuildingId: buildings.find((b) => b.code === "AB-01")?.id,
+      beforeKwh: 580.0,
+      afterKwh: null,
+      verifiedKwhSavings: null,
+      measurementPeriodDays: 30,
+      verificationMethod: "Inverter string DC monitoring comparative yield",
+      supportingEvidence: "Solar inverter telemetry log showing String 4 operating at 18.2A vs String 3 at 23.4A.",
+      completionNotes: "Dispatched from AI Anomaly Detection Engine (Ref: anom-solar-12). Scheduled for weekend wash.",
+      sdgAlignment: "SDG_7",
+      notes: "Cleaning expected to restore ~120 kWh/day of clean solar generation.",
     },
   ];
 
   for (const a of actionsData) {
     await prisma.actionImprovement.create({ data: a });
   }
+  console.log(`✅ Seeded ${actionsData.length} Action & Improvement records across workflow stages.`);
 
-  console.log(`✅ Seeded ${actionsData.length} Action & Improvement records.`);
+  // 11. Seed Sustainability Targets (Phase 5 SDG Tracking)
+  const targetsData = [
+    {
+      title: "Achieve 50% Clean Energy Self-Consumption across Campus Demand",
+      sdgCategory: "SDG_7",
+      targetPeriod: "Academic Year 2026",
+      baselineValue: 38.0,
+      targetValue: 50.0,
+      currentValue: 49.8,
+      unit: "%",
+      status: "ON_TRACK",
+      calculationMethod: "(Consumed Clean Renewable Electricity / Total Campus Electricity Demand) * 100%",
+      remainingGap: 0.2,
+      targetYear: 2026,
+      responsibleUnit: "Campus Renewable Energy & Solar Inverter Operations",
+      notes: "Solar PV rooftop (850 kWp) + Biogas pilot supplying on-site campus demand.",
+    },
+    {
+      title: "Improve Campus Energy Use Intensity (EUI) Below 0.070 kWh/m²",
+      sdgCategory: "SDG_7",
+      targetPeriod: "Academic Year 2026",
+      baselineValue: 0.082,
+      targetValue: 0.070,
+      currentValue: 0.074,
+      unit: "kWh/m²",
+      status: "ON_TRACK",
+      calculationMethod: "Total Monitored Campus Consumption (kWh) / Total Gross Floor Area (69,000 m²)",
+      remainingGap: 0.004,
+      targetYear: 2026,
+      responsibleUnit: "Directorate of Campus Operations",
+      notes: "Baseline established from pre-monitoring campus utility records.",
+    },
+    {
+      title: "Maintain 100% Digital Sub-Metering Coverage of Campus Facilities",
+      sdgCategory: "SDG_9",
+      targetPeriod: "Academic Year 2026",
+      baselineValue: 60.0,
+      targetValue: 100.0,
+      currentValue: 100.0,
+      unit: "%",
+      status: "ACHIEVED",
+      calculationMethod: "(Monitored Building Floor Area / Total Permanent Campus Floor Area) * 100%",
+      remainingGap: 0.0,
+      targetYear: 2026,
+      responsibleUnit: "Electrical Infrastructure & Automation Unit",
+      notes: "All 5 core campus buildings (AB-01, AB-02, YK-SG, LIB-AUD, ADMIN) integrated.",
+    },
+    {
+      title: "Reduce Unoccupied Off-Peak Energy Waste by 25%",
+      sdgCategory: "SDG_12",
+      targetPeriod: "Academic Year 2026",
+      baselineValue: 28.5,
+      targetValue: 15.0,
+      currentValue: 18.2,
+      unit: "%",
+      status: "ON_TRACK",
+      calculationMethod: "(Nighttime & Weekend Unoccupied Baseload / Average Daytime Peak Draw) * 100%",
+      remainingGap: 3.2,
+      targetYear: 2026,
+      responsibleUnit: "HVAC Operations & Building Supervisors",
+      notes: "Targeting parasitic standby equipment, corridor lighting, and unmanaged workstation sleep states.",
+    },
+    {
+      title: "Offset 25,000 kg CO2e Monthly via On-Campus Clean Generation",
+      sdgCategory: "SDG_13",
+      targetPeriod: "Academic Year 2026",
+      baselineValue: 12000.0,
+      targetValue: 25000.0,
+      currentValue: 19469.0,
+      unit: "kg CO2e",
+      status: "ON_TRACK",
+      calculationMethod: "Consumed Renewable Electricity (kWh) * DoE Grid Factor (0.637 kg CO2e/kWh)",
+      remainingGap: 5531.0,
+      targetYear: 2026,
+      responsibleUnit: "DIU Sustainability Committee & Solar Asset Unit",
+      notes: "Avoided Scope 2 greenhouse gas emissions offset against Bangladesh national grid factor.",
+    },
+  ];
 
-  // 11. Initial Audit Log
+  for (const t of targetsData) {
+    await prisma.sustainabilityTarget.create({ data: t });
+  }
+  console.log(`✅ Seeded ${targetsData.length} Sustainability & SDG Target records.`);
+
+  // 12. Initial Audit Log
   await prisma.auditLog.create({
     data: {
-      action: "PHASE_2_SEED_COMPLETED",
+      action: "PHASE_5_SEED_COMPLETED",
       performedBy: admin.email,
-      details: "Database populated with Phase 2 multi-source integration records: Grid, Solar PV, Standby Diesel, Biogas Pilot, API adapters, and sample import batch.",
+      details: "Database populated with Phase 5 sustainability metrics, SDG targets, and end-to-end action improvement workflows.",
     },
   });
 
-  console.log("🚀 Phase 2 Database Seeding Complete!");
+  console.log("🚀 Phase 5 Database Seeding Complete!");
 }
 
 main()

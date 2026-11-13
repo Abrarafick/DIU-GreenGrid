@@ -201,27 +201,63 @@ model EmissionFactorConfig {
 // Action & Improvement Management
 // Tracks detected issues, team assignments, baseline vs after consumption, and verified kWh savings.
 model ActionImprovement {
-  id                   String   @id @default(uuid())
-  title                String
-  detectedIssue        String   // Problem description or AI-flagged anomaly
-  recommendedAction    String   // Operational or maintenance intervention
-  assignedTeam         String   // e.g. "Electrical Maintenance Unit", "HVAC Operations", "IT Infrastructure Support"
-  completionStatus     String   @default("IDENTIFIED") // "IDENTIFIED", "IN_PROGRESS", "COMPLETED_VERIFIED", "CANCELLED"
-  priority             String   @default("MEDIUM") // "LOW", "MEDIUM", "HIGH", "CRITICAL"
+  id                      String   @id @default(uuid())
+  title                   String
+  detectedIssue           String   // Problem description or AI-flagged anomaly
+  recommendedAction       String   // Operational or maintenance intervention
+  assignedTeam            String   // e.g. "Electrical Maintenance Unit", "HVAC Operations", "IT Infrastructure Support"
+  assignedPersonnel       String?  // Specific lead engineer or technician
+  deadline                DateTime?
+  completionStatus        String   @default("IDENTIFIED") // "IDENTIFIED", "IN_PROGRESS", "COMPLETED", "VERIFIED", "CANCELLED"
+  priority                String   @default("MEDIUM") // "LOW", "MEDIUM", "HIGH", "CRITICAL"
   
-  targetBuildingId     String?
-  targetBuilding       Building? @relation(fields: [targetBuildingId], references: [id], onDelete: SetNull)
+  targetBuildingId        String?
+  targetBuilding          Building? @relation(fields: [targetBuildingId], references: [id], onDelete: SetNull)
   
-  beforeKwh            Float?   // Baseline measured consumption prior to intervention
-  afterKwh             Float?   // Measured consumption following intervention
-  verifiedKwhSavings   Float?   // Net verified kWh saved
-  verificationMethod   String?  // e.g. "30-day comparative sub-meter logging", "Before-and-after audit measurement"
+  beforeKwh               Float?   // Baseline measured consumption prior to intervention
+  afterKwh                Float?   // Measured consumption following intervention
+  verifiedKwhSavings      Float?   // Net verified kWh saved (beforeKwh - afterKwh)
+  measurementPeriodDays   Int?     @default(30) // Measurement baseline period in days
+  verificationMethod      String?  // e.g. "30-day comparative sub-meter logging", "Before-and-after audit measurement"
+  verifiedCarbonSavingsKg Float?   // Verified GHG reduction in kg CO2e
+  verifiedBy              String?  // Name or email of verifying engineer/auditor
+  verifiedAt              DateTime?
+  supportingEvidence      String?  // Empirical sensor logs or evidence description
+  completionNotes         String?
+  sdgAlignment            String?  @default("SDG_7") // "SDG_7", "SDG_9", "SDG_12", "SDG_13"
   
-  reportedAt           DateTime @default(now())
-  completedAt          DateTime?
-  notes                String?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  reportedAt              DateTime @default(now())
+  completedAt             DateTime?
+  notes                   String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([completionStatus])
+  @@index([priority])
+  @@index([sdgAlignment])
+}
+
+// Sustainability & SDG Target Tracking (Phase 5)
+model SustainabilityTarget {
+  id                    String   @id @default(uuid())
+  title                 String   // e.g. "Achieve 50% Clean Energy Self-Consumption by Q4 2026"
+  sdgCategory           String   // "SDG_7", "SDG_9", "SDG_12", "SDG_13"
+  targetPeriod          String   // e.g. "Academic Year 2026", "Q4 2026"
+  baselineValue         Float    // Historical baseline value
+  targetValue           Float    // Goal target value
+  currentValue          Float    // Measured progress to date
+  unit                  String   // "%", "kWh/m²", "kg CO2e", "kWh"
+  status                String   @default("ON_TRACK") // "ON_TRACK", "AT_RISK", "ACHIEVED", "PENDING_REVIEW"
+  calculationMethod     String   // Documented mathematical formulation
+  remainingGap          Float    // targetValue - currentValue (or gap to goal)
+  targetYear            Int      @default(2026)
+  responsibleUnit       String   // e.g. "DIU Sustainability Committee & Facilities Division"
+  notes                 String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([sdgCategory])
+  @@index([status])
 }
 
 // Security & Data Lineage Audit Log
