@@ -4,12 +4,14 @@ const bcrypt = require("bcryptjs");
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Starting DIU GreenGrid Database Seeding (Phase 1 Refinement)...");
+  console.log("🌱 Starting DIU GreenGrid Database Seeding (Phase 2 Integration)...");
 
   // 1. Clean existing records
   await prisma.auditLog.deleteMany({});
   await prisma.actionImprovement.deleteMany({});
   await prisma.energyMetric.deleteMany({});
+  await prisma.ingestionBatch.deleteMany({});
+  await prisma.apiAdapterConfig.deleteMany({});
   await prisma.emissionFactorConfig.deleteMany({});
   await prisma.dataSourceProvenance.deleteMany({});
   await prisma.energySource.deleteMany({});
@@ -55,7 +57,7 @@ async function main() {
 
   console.log("✅ Seeded 3 RBAC Users (Admin, Facility Manager, Auditor/Viewer).");
 
-  // 3. Seed Campus Buildings (Daffodil International University - Ashulia Campus)
+  // 3. Seed Campus Buildings
   const buildingsData = [
     {
       code: "AB-01",
@@ -111,11 +113,11 @@ async function main() {
   }
   console.log(`✅ Seeded ${buildings.length} DIU Campus Buildings.`);
 
-  // 4. Seed Configurable Energy Sources (Including Biogas Pilot with UNVERIFIED status)
+  // 4. Seed Configurable Energy Sources (All 4 Sources: Grid, Solar, Diesel, Biogas)
   const energySourcesData = [
     {
       code: "GRID_SUPPLY",
-      name: "Configured National Grid Incomer",
+      name: "Government Grid Incomer",
       sourceType: "GRID",
       ratedCapacityKw: 2500.0,
       isRenewable: false,
@@ -150,21 +152,21 @@ async function main() {
       code: "BIOGAS_PILOT",
       name: "Campus Organic Waste Biogas Pilot",
       sourceType: "BIOGAS",
-      ratedCapacityKw: 30.0, // 30 kW nominal capacity
+      ratedCapacityKw: 30.0,
       isRenewable: true,
-      configuredProvider: "Campus Agricultural & Organic Waste Unit (Pilot Research)",
+      configuredProvider: "DIU Agricultural & Organic Waste Unit (Pilot Research)",
       monitoringMethod: "UNVERIFIED_PENDING_METERING",
-      operationalStatus: "UNVERIFIED_PILOT", // STRICTLY UNVERIFIED
-      isActive: false, // Inactive / unverified - zero invented production readings
+      operationalStatus: "UNVERIFIED_PILOT", // Clearly labeled
+      isActive: true, // Enabled for demonstrated simulation testing
     },
   ];
 
-  const energySources = [];
+  const energySources = {};
   for (const s of energySourcesData) {
     const created = await prisma.energySource.create({ data: s });
-    energySources.push(created);
+    energySources[s.code] = created;
   }
-  console.log(`✅ Seeded ${energySources.length} Configurable Energy Sources (including Biogas Pilot as UNVERIFIED).`);
+  console.log(`✅ Seeded 4 Configurable Energy Sources (Grid, Solar, Diesel, Biogas).`);
 
   // 5. Seed Data Source Provenances
   const provenanceData = [
@@ -174,17 +176,17 @@ async function main() {
       ingestionMethod: "API_CONNECTOR",
       isSimulated: false,
       confidenceRating: 1.0,
-      sourceDetails: "Direct read-only telemetry adapter connected to solar inverters.",
+      sourceDetails: "Read-only REST adapter connected to solar inverters.",
       description: "Automated hourly active yield and irradiance metrics.",
     },
     {
       code: "SUBMETER_CSV_IMPORT",
-      name: "Facility Submeter Logbook CSV Import",
+      name: "Facility Submeter Logbook CSV/Excel Import",
       ingestionMethod: "CSV_EXCEL_IMPORT",
       isSimulated: false,
       confidenceRating: 0.95,
-      sourceDetails: "Digitized spreadsheet imports from electrical sub-station loggers.",
-      description: "Periodic batch ingestion of campus energy meter files.",
+      sourceDetails: "Batch spreadsheet ingestion from electrical loggers.",
+      description: "Validated sub-station digital CSV/Excel logs.",
     },
     {
       code: "MANUAL_LOG_ENTRY",
@@ -193,7 +195,7 @@ async function main() {
       isSimulated: false,
       confidenceRating: 0.85,
       sourceDetails: "Direct manual submission by certified facility engineering staff.",
-      description: "Log entries for technical generator run-hours and diesel additions.",
+      description: "Logbook entries for technical generator run-hours and diesel additions.",
     },
     {
       code: "DEMO_SIMULATION_ENGINE",
@@ -213,7 +215,76 @@ async function main() {
   }
   console.log(`✅ Seeded ${Object.keys(provenances).length} Data Source Provenances.`);
 
-  // 6. Seed Configurable Emission Factors with Detailed Methodology & Disclaimers
+  // 6. Seed Configurable API Adapters (Phase 2)
+  const adaptersData = [
+    {
+      name: "Campus Solar Inverter Telemetry Gateway",
+      adapterType: "SOLAR_INVERTER",
+      baseUrl: "https://inverters.campus.diu.edu.bd/api/v1/telemetry",
+      authType: "API_KEY",
+      authKeyMasked: "diu_••••_sol850",
+      pollingIntervalMins: 15,
+      status: "CONFIGURED_IDLE",
+      isSimulatedFallback: true,
+      targetEnergySourceId: energySources["SOLAR_ROOFTOP"].id,
+    },
+    {
+      name: "Sub-station 11kV Incomer Digital Interface",
+      adapterType: "GRID_METER",
+      baseUrl: "http://substation-modbus.internal.diu.edu.bd/api/meter",
+      authType: "NONE",
+      pollingIntervalMins: 30,
+      status: "CONFIGURED_IDLE",
+      isSimulatedFallback: true,
+      targetEnergySourceId: energySources["GRID_SUPPLY"].id,
+    },
+    {
+      name: "Auxiliary Generator Fuel & Runtime Telemetry",
+      adapterType: "GENSET_TELEMETRY",
+      baseUrl: "http://genset-mon.internal.diu.edu.bd/telemetry",
+      authType: "BEARER_TOKEN",
+      authKeyMasked: "bear••••9281",
+      pollingIntervalMins: 60,
+      status: "CONFIGURED_IDLE",
+      isSimulatedFallback: true,
+      targetEnergySourceId: energySources["CAMPUS_GENSET"].id,
+    },
+    {
+      name: "Biogas Pilot Plant Orifice Flow Meter",
+      adapterType: "BIOGAS_MONITOR",
+      baseUrl: "http://biogas-pilot.internal.diu.edu.bd/flow-rate",
+      authType: "NONE",
+      pollingIntervalMins: 60,
+      status: "CONFIGURED_IDLE",
+      isSimulatedFallback: true,
+      targetEnergySourceId: energySources["BIOGAS_PILOT"].id,
+    },
+  ];
+
+  for (const a of adaptersData) {
+    await prisma.apiAdapterConfig.create({ data: a });
+  }
+  console.log(`✅ Seeded ${adaptersData.length} Configurable API Adapters.`);
+
+  // 7. Seed Initial Ingestion Batch (Auditing demonstrative import)
+  const sampleBatch = await prisma.ingestionBatch.create({
+    data: {
+      filename: "diu-campus-weekly-baseline-log.csv",
+      fileType: "CSV",
+      sourceType: "DEMO_SIMULATION",
+      isSimulated: true,
+      totalRows: 215,
+      successfulRows: 215,
+      rejectedRows: 0,
+      duplicateRows: 0,
+      summaryNotes: "Baseline multi-source campus demonstration readings for hackathon evaluation.",
+      importedBy: admin.email,
+      provenanceId: provenances["DEMO_SIMULATION_ENGINE"].id,
+    },
+  });
+  console.log(`✅ Seeded initial Ingestion Batch record.`);
+
+  // 8. Seed Documented Emission Factors
   const emissionFactorsData = [
     {
       factorKey: "GRID_ELECTRICITY_CO2",
@@ -244,12 +315,11 @@ async function main() {
   for (const f of emissionFactorsData) {
     await prisma.emissionFactorConfig.create({ data: f });
   }
-  console.log(`✅ Seeded ${emissionFactorsData.length} Documented Emission Factors with methodology & non-authoritative disclaimers.`);
+  console.log(`✅ Seeded 2 Documented Emission Factors.`);
 
-  // 7. Seed Demonstration Energy Metrics (Strictly Labeled Simulated Data)
-  // Generating 7 days of 4-hour interval readings for demonstration
-  // NOTE: Zero readings generated for BIOGAS_PILOT (strictly unverified)
+  // 9. Seed Demonstration Energy Metrics Across ALL FOUR SOURCES (Strictly Labeled isSimulated: true)
   const gridFactor = 0.637;
+  const dieselFactor = 2.68;
   const demoProv = provenances["DEMO_SIMULATION_ENGINE"];
 
   const now = new Date();
@@ -258,23 +328,35 @@ async function main() {
   for (let dayOffset = 6; dayOffset >= 0; dayOffset--) {
     const dateBase = new Date(now.getTime() - dayOffset * 24 * 60 * 60 * 1000);
     const dayOfWeek = dateBase.getDay();
-    const isWeekend = dayOfWeek === 5 || dayOfWeek === 6; // Friday / Saturday in Bangladesh
+    const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
 
     for (let hour of [0, 4, 8, 12, 16, 20]) {
       const timestamp = new Date(dateBase);
       timestamp.setHours(hour, 0, 0, 0);
 
+      // 1. Solar Generation (Bell curve)
       let solarYieldKw = 0;
       if (hour === 8) solarYieldKw = 180 + Math.random() * 40;
       else if (hour === 12) solarYieldKw = 620 + Math.random() * 80;
       else if (hour === 16) solarYieldKw = 210 + Math.random() * 30;
       const solarKwh = solarYieldKw * 4;
 
+      // 2. Diesel Generator Maintenance Test (strictly Day 3 at 12:00)
       let dieselLitres = 0;
       let genRuntimeHours = 0;
+      let genKwh = 0;
       if (dayOffset === 3 && hour === 12) {
-        dieselLitres = 45.5; // strictly litres of fuel consumed
+        dieselLitres = 45.5; // litres consumed (technical only)
         genRuntimeHours = 1.5;
+        genKwh = 135.0; // kWh produced by generator
+      }
+
+      // 3. Biogas Pilot Plant (Daytime digestate production, 8.5 m3, 14.2 kWh)
+      let biogasM3 = 0;
+      let biogasKwh = 0;
+      if (hour === 12) {
+        biogasM3 = Number((7.5 + Math.random() * 2).toFixed(1));
+        biogasKwh = Number((biogasM3 * 1.65).toFixed(1)); // ~1.65 kWh/m3 conversion factor
       }
 
       for (const building of buildings) {
@@ -296,25 +378,30 @@ async function main() {
 
         const kwhConsumed = Number(((building.baselineDailyKwh / 6) * loadFactor).toFixed(1));
         const buildingSolarShare = (solarKwh / buildings.length);
-        const carbonEmitted = Number((kwhConsumed * gridFactor).toFixed(2));
-        const carbonAvoided = Number((buildingSolarShare * gridFactor).toFixed(2));
+        const buildingBiogasShare = (biogasKwh / buildings.length);
+        const carbonEmitted = Number(((kwhConsumed * gridFactor) + (building.code === "AB-01" ? dieselLitres * dieselFactor : 0)).toFixed(2));
+        const carbonAvoided = Number(((buildingSolarShare + buildingBiogasShare) * gridFactor).toFixed(2));
 
         await prisma.energyMetric.create({
           data: {
             timestamp,
             buildingId: building.id,
-            energySourceId: energySources[0].id,
+            energySourceId: energySources["GRID_SUPPLY"].id,
             provenanceId: demoProv.id,
+            batchId: sampleBatch.id,
             isSimulated: true, // EXPLICIT TRANSPARENCY
             kwhConsumed,
             solarKwhGenerated: Number(buildingSolarShare.toFixed(1)),
             dieselLitres: building.code === "AB-01" ? dieselLitres : 0.0,
             generatorRuntimeHours: building.code === "AB-01" ? genRuntimeHours : 0.0,
+            generatorKwhGenerated: building.code === "AB-01" ? genKwh : 0.0,
+            biogasM3Consumed: Number(buildingBiogasShare > 0 ? (biogasM3 / buildings.length).toFixed(2) : 0),
+            biogasKwhGenerated: Number(buildingBiogasShare.toFixed(1)),
             peakDemandKw: Number((kwhConsumed / 4 * 1.25).toFixed(1)),
             powerFactor: 0.94,
             carbonKgEmitted: carbonEmitted,
             carbonKgAvoided: carbonAvoided,
-            notes: "Simulated demonstration reading for DIU GreenGrid evaluation.",
+            notes: "Simulated demonstration reading for DIU GreenGrid evaluation. Sources: Grid, Solar PV, Diesel Gen, Biogas Pilot.",
           },
         });
         metricCount++;
@@ -322,9 +409,9 @@ async function main() {
     }
   }
 
-  console.log(`✅ Seeded ${metricCount} Demonstration Energy Records (strictly isSimulated: true, 0 Biogas fake readings).`);
+  console.log(`✅ Seeded ${metricCount} Demonstration Energy Records across Grid, Solar PV, Diesel Gen, and Biogas Pilot (all isSimulated: true).`);
 
-  // 8. Seed Action & Improvement Management Items
+  // 10. Seed Action & Improvement Management Items
   const actionsData = [
     {
       title: "AB-02 3rd Floor Computer Lab Night-time Standby Idle Surge",
@@ -376,16 +463,16 @@ async function main() {
 
   console.log(`✅ Seeded ${actionsData.length} Action & Improvement records.`);
 
-  // 9. Initial Audit Log
+  // 11. Initial Audit Log
   await prisma.auditLog.create({
     data: {
-      action: "PHASE_1_CORRECTION_APPLIED",
+      action: "PHASE_2_SEED_COMPLETED",
       performedBy: admin.email,
-      details: "Added Biogas as UNVERIFIED_PILOT source (0 invented readings), documented emission factor methodology/assumptions, and verified security constraints.",
+      details: "Database populated with Phase 2 multi-source integration records: Grid, Solar PV, Standby Diesel, Biogas Pilot, API adapters, and sample import batch.",
     },
   });
 
-  console.log("🚀 Phase 1 Refined Database Seeding Complete!");
+  console.log("🚀 Phase 2 Database Seeding Complete!");
 }
 
 main()

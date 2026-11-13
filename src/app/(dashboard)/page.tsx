@@ -7,21 +7,17 @@ export const dynamic = "force-dynamic";
 export default async function OverviewPage() {
   const session = await getSession();
 
-  // 1. Fetch buildings
   const buildings = await db.building.findMany({
     where: { isActive: true },
     orderBy: { code: "asc" },
   });
 
-  // 2. Fetch energy sources
   const sources = await db.energySource.findMany({
-    where: { isActive: true },
+    orderBy: { code: "asc" },
   });
 
-  // 3. Fetch emission factors
   const emissionFactors = await db.emissionFactorConfig.findMany();
 
-  // 4. Fetch metrics
   const metrics = await db.energyMetric.findMany({
     take: 200,
     orderBy: { timestamp: "desc" },
@@ -88,7 +84,7 @@ export default async function OverviewPage() {
       totalKwhConsumed: Number(totalKwhConsumed.toFixed(1)),
       totalSolarGeneratedKwh: Number(totalSolarGeneratedKwh.toFixed(1)),
       renewableSharePercent: renewableShare,
-      dieselLitres: Number(totalDieselLitres.toFixed(1)), // strictly technical monitoring
+      dieselLitres: Number(totalDieselLitres.toFixed(1)),
       generatorRuntimeHours: Number(totalGenRuntimeHours.toFixed(1)),
       carbonEmittedKg: Number(totalCarbonEmittedKg.toFixed(1)),
       carbonAvoidedKg: Number(totalCarbonAvoidedKg.toFixed(1)),

@@ -56,6 +56,42 @@ export interface DataSourceProvenanceData {
   description: string;
 }
 
+export interface IngestionBatchData {
+  id: string;
+  filename: string;
+  fileType: string;
+  sourceType: IngestionMethod;
+  isSimulated: boolean;
+  totalRows: number;
+  successfulRows: number;
+  rejectedRows: number;
+  duplicateRows: number;
+  validationErrorsJson?: string | null;
+  summaryNotes?: string | null;
+  importedBy: string;
+  createdAt: string | Date;
+  provenanceId?: string | null;
+  provenance?: DataSourceProvenanceData | null;
+}
+
+export interface ApiAdapterConfigData {
+  id: string;
+  name: string;
+  adapterType: "SOLAR_INVERTER" | "GRID_METER" | "GENSET_TELEMETRY" | "BIOGAS_MONITOR";
+  baseUrl: string;
+  authType: "API_KEY" | "BEARER_TOKEN" | "BASIC_AUTH" | "NONE";
+  authKeyMasked?: string | null;
+  pollingIntervalMins: number;
+  status: "CONFIGURED_IDLE" | "ACTIVE_SYNCING" | "CONNECTION_ERROR" | "MOCK_SYNC_OK";
+  lastSyncAt?: string | Date | null;
+  lastSyncStatus?: string | null;
+  lastSyncMessage?: string | null;
+  isSimulatedFallback: boolean;
+  isEnabled: boolean;
+  targetEnergySourceId?: string | null;
+  targetEnergySource?: EnergySourceData | null;
+}
+
 export interface EnergyMetricData {
   id: string;
   timestamp: string | Date;
@@ -64,17 +100,26 @@ export interface EnergyMetricData {
   energySourceId?: string | null;
   energySource?: EnergySourceData | null;
   provenanceId: string;
-  provenance: DataSourceProvenanceData;
+  provenance?: DataSourceProvenanceData;
+  batchId?: string | null;
+  batch?: IngestionBatchData | null;
   isSimulated: boolean;
+  
+  // Technical measurements
   kwhConsumed: number;
-  solarKwhGenerated: number;
-  dieselLitres: number; // Technical monitoring
-  generatorRuntimeHours: number;
   peakDemandKw?: number | null;
   powerFactor?: number | null;
+  solarKwhGenerated: number;
+  dieselLitres: number;
+  generatorRuntimeHours: number;
+  generatorKwhGenerated: number;
+  biogasM3Consumed: number;
+  biogasKwhGenerated: number;
+
   carbonKgEmitted: number;
   carbonKgAvoided: number;
   notes?: string | null;
+  rawPayload?: string | null;
 }
 
 export interface EmissionFactorData {
@@ -113,39 +158,52 @@ export interface ActionImprovementData {
   notes?: string | null;
 }
 
-// Sustainability & SDG Indicators (SDG 7, 9, 12, 13, and optional 11)
-export interface SDGReport {
-  // SDG 7: Affordable & Clean Energy
-  sdg7: {
-    totalGenerationKwh: number;
-    solarGenerationKwh: number;
-    renewableSharePercent: number;
-    cleanEnergyUptimePercent: number;
-  };
-  // SDG 9: Industry, Innovation, and Infrastructure
-  sdg9: {
-    smartMonitoringCoveragePercent: number;
-    submeterDigitalizationRate: number;
-    gridStabilityIndex: number;
-  };
-  // SDG 12: Responsible Consumption & Production
-  sdg12: {
-    totalCampusConsumptionKwh: number;
-    perCapitaConsumptionKwhPerDay: number;
-    nighttimeBaseloadFractionPercent: number;
-    wasteReductionVerifiedKwh: number;
-  };
-  // SDG 13: Climate Action
-  sdg13: {
-    netCarbonEmittedKg: number;
-    solarCarbonAvoidedKg: number;
-    netEmissionsIntensityKgPerSqm: number;
-    configuredGridEmissionFactor: number;
-    configuredDieselEmissionFactor: number;
-  };
-  // SDG 11: Sustainable Cities & Communities (Optional Indicator)
-  sdg11?: {
-    campusGreenScore: number;
-    ecoFacilityIndex: number;
-  };
+// Ingestion Parsing & Validation interfaces
+export interface IngestionRowInput {
+  timestamp: string;
+  buildingCode?: string;
+  sourceCode?: string;
+  kwhConsumed?: number | string;
+  solarKwhGenerated?: number | string;
+  dieselLitres?: number | string;
+  generatorRuntimeHours?: number | string;
+  generatorKwhGenerated?: number | string;
+  biogasM3Consumed?: number | string;
+  biogasKwhGenerated?: number | string;
+  peakDemandKw?: number | string;
+  powerFactor?: number | string;
+  unit?: string; // e.g. "kWh", "MWh", "W", "Litres", "m3"
+  notes?: string;
+}
+
+export interface IngestionValidationError {
+  row: number;
+  field?: string;
+  value?: any;
+  message: string;
+}
+
+export interface ValidatedIngestionResult {
+  totalRows: number;
+  acceptedRows: Array<{
+    timestamp: Date;
+    buildingId?: string | null;
+    energySourceId?: string | null;
+    kwhConsumed: number;
+    solarKwhGenerated: number;
+    dieselLitres: number;
+    generatorRuntimeHours: number;
+    generatorKwhGenerated: number;
+    biogasM3Consumed: number;
+    biogasKwhGenerated: number;
+    peakDemandKw?: number | null;
+    powerFactor?: number | null;
+    carbonKgEmitted: number;
+    carbonKgAvoided: number;
+    notes?: string | null;
+    rawPayload: string;
+  }>;
+  duplicateRows: number;
+  rejectedRows: number;
+  errors: IngestionValidationError[];
 }

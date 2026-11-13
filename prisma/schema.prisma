@@ -58,6 +58,7 @@ model EnergySource {
   updatedAt          DateTime @updatedAt
 
   metrics            EnergyMetric[]
+  apiAdapters        ApiAdapterConfig[]
 }
 
 // Data Provenance & Ingestion Source Metadata
@@ -75,45 +76,109 @@ model DataSourceProvenance {
   updatedAt        DateTime @updatedAt
 
   metrics          EnergyMetric[]
+  batches          IngestionBatch[]
+}
+
+// Batch Ingestion History & Validation Audits (Phase 2)
+model IngestionBatch {
+  id                    String   @id @default(uuid())
+  filename              String
+  fileType              String   // "CSV", "EXCEL", "MANUAL_BATCH", "API_SYNC"
+  sourceType            String   // "CSV_IMPORT", "MANUAL_ENTRY", "REAL_API", "SIMULATED_DEMO"
+  isSimulated           Boolean  @default(false)
+  totalRows             Int
+  successfulRows        Int
+  rejectedRows          Int
+  duplicateRows         Int
+  validationErrorsJson  String?  // JSON string containing detailed validation error records
+  summaryNotes          String?
+  importedBy            String   // User email or "SYSTEM"
+  createdAt             DateTime @default(now())
+
+  provenanceId          String?
+  provenance            DataSourceProvenance? @relation(fields: [provenanceId], references: [id], onDelete: SetNull)
+
+  metrics               EnergyMetric[]
+
+  @@index([createdAt])
+  @@index([sourceType])
+}
+
+// Configurable External System API Adapters (Phase 2)
+// Does NOT assume DIU API exists; fully parameterizable with status reporting.
+model ApiAdapterConfig {
+  id                    String   @id @default(uuid())
+  name                  String   // e.g. "Campus Rooftop Inverter Telemetry Connector"
+  adapterType           String   // "SOLAR_INVERTER", "GRID_METER", "GENSET_TELEMETRY", "BIOGAS_MONITOR"
+  baseUrl               String
+  authType              String   @default("NONE") // "API_KEY", "BEARER_TOKEN", "BASIC_AUTH", "NONE"
+  authKeyMasked         String?
+  pollingIntervalMins   Int      @default(60)
+  status                String   @default("CONFIGURED_IDLE") // "CONFIGURED_IDLE", "ACTIVE_SYNCING", "CONNECTION_ERROR", "MOCK_SYNC_OK"
+  lastSyncAt            DateTime?
+  lastSyncStatus        String?
+  lastSyncMessage       String?
+  isSimulatedFallback   Boolean  @default(true)
+  isEnabled             Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  targetEnergySourceId  String?
+  targetEnergySource    EnergySource? @relation(fields: [targetEnergySourceId], references: [id], onDelete: SetNull)
 }
 
 // Energy Telemetry & Consumption Record
 // Strictly technical: kWh, kW, litres of diesel, carbon offsets. ZERO financial data.
 model EnergyMetric {
-  id                 String   @id @default(uuid())
-  timestamp          DateTime
+  id                    String   @id @default(uuid())
+  timestamp             DateTime
   
   // Relations
-  buildingId         String?
-  building           Building? @relation(fields: [buildingId], references: [id], onDelete: SetNull)
+  buildingId            String?
+  building              Building? @relation(fields: [buildingId], references: [id], onDelete: SetNull)
   
-  energySourceId     String?
-  energySource       EnergySource? @relation(fields: [energySourceId], references: [id], onDelete: SetNull)
+  energySourceId        String?
+  energySource          EnergySource? @relation(fields: [energySourceId], references: [id], onDelete: SetNull)
   
-  provenanceId       String
-  provenance         DataSourceProvenance @relation(fields: [provenanceId], references: [id], onDelete: Restrict)
+  provenanceId          String
+  provenance            DataSourceProvenance @relation(fields: [provenanceId], references: [id], onDelete: Restrict)
+
+  batchId               String?
+  batch                 IngestionBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
   
   // Provenance flag copied for high-speed indexing & visual UI warnings
-  isSimulated        Boolean  @default(false)
+  isSimulated           Boolean  @default(false)
 
-  // Technical Measurements
-  kwhConsumed        Float    @default(0.0) // Energy drawn from grid or consumed by building
-  solarKwhGenerated  Float    @default(0.0) // Solar PV yield generated
-  dieselLitres       Float    @default(0.0) // Technical monitoring: Diesel fuel volume consumed by generator
-  generatorRuntimeHours Float @default(0.0) // Technical monitoring: Generator operating hours
-  peakDemandKw       Float?   // Peak kW observed in period
-  powerFactor        Float?   // Observed power factor (0.00 to 1.00)
-  
+  // Technical Measurements - Grid & Consumption
+  kwhConsumed           Float    @default(0.0) // Energy drawn from grid or consumed by building
+  peakDemandKw          Float?   // Peak kW observed in period
+  powerFactor           Float?   // Observed power factor (0.00 to 1.00)
+
+  // Technical Measurements - Solar PV
+  solarKwhGenerated     Float    @default(0.0) // Solar PV yield generated
+
+  // Technical Measurements - Diesel Standby Generator
+  dieselLitres          Float    @default(0.0) // Technical monitoring: Diesel fuel volume consumed by generator
+  generatorRuntimeHours Float    @default(0.0) // Technical monitoring: Generator operating hours
+  generatorKwhGenerated Float    @default(0.0) // Technical monitoring: Electricity generated by diesel generator
+
+  // Technical Measurements - Biogas Pilot Plant
+  biogasM3Consumed      Float    @default(0.0) // Volume of biogas consumed (cubic meters)
+  biogasKwhGenerated    Float    @default(0.0) // Equivalent electricity generated from biogas
+
   // Calculated Emissions Metrics (Technical)
-  carbonKgEmitted    Float    @default(0.0) // Calculated GHG emissions based on active emission factor
-  carbonKgAvoided    Float    @default(0.0) // GHG emissions avoided via solar clean generation
+  carbonKgEmitted       Float    @default(0.0) // Calculated GHG emissions based on active emission factor
+  carbonKgAvoided       Float    @default(0.0) // GHG emissions avoided via solar clean generation
 
-  notes              String?
-  createdAt          DateTime @default(now())
+  notes                 String?
+  rawPayload            String?  // Audit copy of parsed source row
+  createdAt             DateTime @default(now())
 
   @@index([timestamp])
   @@index([buildingId, timestamp])
+  @@index([energySourceId, timestamp])
   @@index([isSimulated])
+  @@index([batchId])
 }
 
 // Configurable Emission Factors, Methodologies & Assumptions
